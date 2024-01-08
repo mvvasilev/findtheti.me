@@ -1,0 +1,10 @@
+CREATE SCHEMA IF NOT EXISTS events;
+
+CREATE TABLE IF NOT EXISTS events.event (
+    id BIGSERIAL,
+    snowflake_if VARCHAR(255) NOT NULL,
+    from_date TIMESTAMP NOT NULL,
+    to_date TIMESTAMP NOT NULL,
+    event_type VARCHAR(255) NOT NULL,
+    CONSTRAINT PK_event PRIMARY KEY (id)
+)
