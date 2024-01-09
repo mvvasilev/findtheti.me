@@ -7,9 +7,10 @@ pub(crate) struct Event {
     pub snowflake_id: String,
     pub name: String,
     pub description: Option<String>,
-    pub from_date: NaiveDateTime,
-    pub to_date: NaiveDateTime,
+    pub from_date: Option<NaiveDateTime>,
+    pub to_date: Option<NaiveDateTime>,
     pub event_type: EventType,
+    pub duration: i32
 }
 
 #[derive(Debug)]

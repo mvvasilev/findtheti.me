@@ -40,8 +40,8 @@ pub(crate) async fn insert_event_and_fetch_id(
 ) -> Result<i64, sqlx::Error> {
     sqlx::query_scalar!(
         r#"
-        INSERT INTO events.event (snowflake_id, name, description, from_date, to_date, event_type)
-        VALUES ($1, $2, $3, $4, $5, $6)
+        INSERT INTO events.event (snowflake_id, name, description, from_date, to_date, event_type, duration)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
         RETURNING id
         "#,
         event.snowflake_id,
@@ -49,7 +49,8 @@ pub(crate) async fn insert_event_and_fetch_id(
         event.description,
         event.from_date,
         event.to_date,
-        event.event_type.to_string()
+        event.event_type.to_string(),
+        event.duration
     )
     .fetch_one(&mut **txn)
     .await

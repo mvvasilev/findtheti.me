@@ -1,0 +1,11 @@
+ALTER TABLE events.event
+DROP COLUMN IF EXISTS from_date;
+
+ALTER TABLE events.event
+DROP COLUMN IF EXISTS to_date;
+
+ALTER TABLE events.event
+ADD COLUMN IF NOT EXISTS from_date TIMESTAMP NULL;
+
+ALTER TABLE events.event
+ADD COLUMN IF NOT EXISTS to_date TIMESTAMP NULL;

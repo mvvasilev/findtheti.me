@@ -16,10 +16,15 @@ async fn main() {
 
     let api_routes = api::routes().await.expect("Unable to create api routes");
 
-    let routes = Router::new()
-        .nest("/api", api_routes)
-        .nest_service("/", ServeDir::new("./frontend/dist"))
-        .fallback_service(ServeDir::new("./frontend/dist"));
+    let mut routes = Router::new()
+        .nest("/api", api_routes);
+
+
+    // If in release mod, serve static files
+    if !cfg!(debug_assertions) {
+        routes = routes.nest_service("/", ServeDir::new("./frontend/dist"))
+            .fallback_service(ServeDir::new("./frontend/dist"));
+    }
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 8080));
 

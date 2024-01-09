@@ -18,21 +18,23 @@ use crate::{
 
 #[derive(Deserialize)]
 pub struct CreateEventDto {
-    from_date: DateTime<Utc>,
-    to_date: DateTime<Utc>,
+    from_date: Option<DateTime<Utc>>,
+    to_date: Option<DateTime<Utc>>,
     name: String,
     description: Option<String>,
     event_type: String,
+    duration: i32
 }
 
 #[derive(Serialize)]
 pub struct EventDto {
     snowflake_id: String,
-    from_date: DateTime<Utc>,
-    to_date: DateTime<Utc>,
+    from_date: Option<DateTime<Utc>>,
+    to_date: Option<DateTime<Utc>>,
     name: String,
     description: Option<String>,
     event_type: String,
+    duration: i32
 }
 
 #[derive(Deserialize)]
@@ -92,9 +94,10 @@ pub async fn create_event(
                         snowflake_id: uid,
                         name: dto.name,
                         description: dto.description,
-                        from_date: dto.from_date.naive_utc(),
-                        to_date: dto.to_date.naive_utc(),
+                        from_date: dto.from_date.map(|d| d.naive_utc()),
+                        to_date: dto.to_date.map(|d| d.naive_utc()),
                         event_type,
+                        duration: dto.duration
                     },
                 )
                 .await?;
@@ -103,11 +106,12 @@ pub async fn create_event(
 
                 Ok(EventDto {
                     snowflake_id: event.snowflake_id,
-                    from_date: Utc.from_utc_datetime(&event.from_date),
-                    to_date: Utc.from_utc_datetime(&event.to_date),
+                    from_date: event.from_date.map(|d| Utc.from_utc_datetime(&d)),
+                    to_date: event.to_date.map(|d| Utc.from_utc_datetime(&d)),
                     name: event.name,
                     description: event.description,
                     event_type: event.event_type.to_string(),
+                    duration: event.duration
                 })
             })
         })
@@ -132,11 +136,12 @@ pub async fn fetch_event(
 
                 Ok(EventDto {
                     snowflake_id: event.snowflake_id,
-                    from_date: Utc.from_utc_datetime(&event.from_date),
-                    to_date: Utc.from_utc_datetime(&event.to_date),
+                    from_date: event.from_date.map(|d| Utc.from_utc_datetime(&d)),
+                    to_date: event.to_date.map(|d| Utc.from_utc_datetime(&d)),
                     name: event.name,
                     description: event.description,
                     event_type: event.event_type.to_string(),
+                    duration: event.duration
                 })
             })
         })
