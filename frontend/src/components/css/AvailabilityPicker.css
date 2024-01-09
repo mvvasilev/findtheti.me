@@ -1,0 +1,46 @@
+:root {
+    --hover-color: #004455;
+    --hour-light-color: #003344;
+    --hour-dark-color: #002233;
+    --hour-border-bolor: #777;
+    --hour-text-color: #ddd;
+    --active-color: #223300;
+    --currently-selected-color: #112200;
+    --halfhour-border-color: #333;
+}
+
+div.hour-light {
+    width: 100%;
+    border-bottom: solid 1px;
+    border-color: var(--hour-border-bolor);
+    background-color: var(--hour-light-color);
+}
+
+div.hour-dark {
+    width: 100%;
+    border-bottom: solid 1px;
+    border-color: var(--hour-border-bolor);
+    background-color: var(--hour-dark-color);
+}
+
+div.full-hour {
+    width: 100%;
+    border-bottom: dashed 1px;
+    border-color: var(--halfhour-border-color)
+}
+
+div.half-hour {
+    width: 100%;
+}
+
+div.selected-availability {
+    background-color: var(--currently-selected-color);
+}
+
+div.full-hour:hover, div.half-hour:hover {
+    background-color: var(--hover-color);
+}
+
+div.full-hour:active, div.half-hour:active {
+    background-color: var(--active-color);
+}
