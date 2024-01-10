@@ -616,7 +616,7 @@
 
 "@mui/system@^5.15.3":
   version "5.15.3"
-  resolved "https://registry.npmjs.org/@mui/system/-/system-5.15.3.tgz"
+  resolved "https://registry.yarnpkg.com/@mui/system/-/system-5.15.3.tgz#062d0d6b5259c3dc0e1d4026b85ffcc3acf8637b"
   integrity sha512-ewVU4eRgo4VfNMGpO61cKlfWmH7l9s6rA8EknRzuMX3DbSLfmtW2WJJg6qPwragvpPIir0Pp/AdWVSDhyNy5Tw==
   dependencies:
     "@babel/runtime" "^7.23.6"
@@ -1068,6 +1068,16 @@ chalk@^4.0.0:
   dependencies:
     ansi-styles "^4.1.0"
     supports-color "^7.1.0"
+
+classname@^0.0.0:
+  version "0.0.0"
+  resolved "https://registry.yarnpkg.com/classname/-/classname-0.0.0.tgz#43d171b484e354c7a293a5b78004df6852db20d6"
+  integrity sha512-kkhsspEJdUW+VhuvNzb2sQf0KbafDPfd36dB1qf03Uu42dWZwMQzaQuyNkaRr5ir0ZiAN0+TlH/EOOfwb/aaXg==
+
+classnames@^2.5.1:
+  version "2.5.1"
+  resolved "https://registry.yarnpkg.com/classnames/-/classnames-2.5.1.tgz#ba774c614be0f016da105c858e7159eae8e7687b"
+  integrity sha512-saHYOzhIQs6wy2sVxTM6bUDsQO4F50V9RQ22qBpEdCW+I+/Wmke2HOl6lS6dTpdxVhb88/I6+Hs+438c3lfUow==
 
 clsx@^2.0.0:
   version "2.1.0"
