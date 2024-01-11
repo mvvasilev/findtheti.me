@@ -31,18 +31,26 @@ pub(crate) async fn routes() -> Result<Router, ApplicationError> {
         .with_state(AppState::new().await?))
 }
 
-pub(crate) fn ok<T: Serialize, E: Error>(r: Result<T, E>) -> UniversalResponseDto<T> {
+pub(crate) fn ok<T: Serialize>(r: Result<T, ApplicationError>) -> UniversalResponseDto<T> {
     match r {
         Ok(res) => UniversalResponseDto {
             status: StatusCode::OK,
             result: Some(res),
             error: None,
         },
-        Err(err) => internal_server_error(err),
+        Err(err) => error(err),
     }
 }
 
-pub(crate) fn internal_server_error<T: Serialize, E: Error>(e: E) -> UniversalResponseDto<T> {
+pub(crate) fn error<T: Serialize>(e: ApplicationError) -> UniversalResponseDto<T> {
+    UniversalResponseDto {
+        status: e.status,
+        result: None,
+        error: Some(ErrorDto { message: format!("{}", e)})
+    }
+}
+
+pub(crate) fn internal_server_error<T: Serialize>(e: ApplicationError) -> UniversalResponseDto<T> {
     UniversalResponseDto {
         status: StatusCode::INTERNAL_SERVER_ERROR,
         result: None,
@@ -104,14 +112,15 @@ impl AppState {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
 pub struct ApplicationError {
+    status: StatusCode,
     msg: String,
 }
 
 impl ApplicationError {
-    pub fn new(msg: String) -> Self {
-        Self { msg }
+    pub fn new(msg: String, status: StatusCode) -> Self {
+        Self { msg, status }
     }
 }
 
@@ -119,6 +128,7 @@ impl From<sqlx::Error> for ApplicationError {
     fn from(value: sqlx::Error) -> Self {
         Self {
             msg: value.to_string(),
+            status: StatusCode::INTERNAL_SERVER_ERROR
         }
     }
 }
@@ -127,6 +137,7 @@ impl From<MigrateError> for ApplicationError {
     fn from(value: MigrateError) -> Self {
         Self {
             msg: value.to_string(),
+            status: StatusCode::INTERNAL_SERVER_ERROR
         }
     }
 }
@@ -135,6 +146,7 @@ impl From<VarError> for ApplicationError {
     fn from(value: VarError) -> Self {
         Self {
             msg: value.to_string(),
+            status: StatusCode::INTERNAL_SERVER_ERROR
         }
     }
 }

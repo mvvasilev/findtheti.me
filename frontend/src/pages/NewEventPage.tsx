@@ -1,10 +1,12 @@
 import { Alert, Button, MenuItem, Select, Slider, TextField, Typography } from '@mui/material';
 import Grid from '@mui/material/Unstable_Grid2'
-import { DateTimePicker } from '@mui/x-date-pickers';
+import { DatePicker } from '@mui/x-date-pickers';
 import { useEffect, useState } from 'react';
 import { useNavigate } from "react-router-dom"
 import { Event, EventTypes, createEvent } from '../types/Event';
 import utils from '../utils';
+import toast from 'react-hot-toast';
+import dayjs from 'dayjs';
 
 export default function NewEventPage() {
     const navigate = useNavigate(); 
@@ -17,26 +19,42 @@ export default function NewEventPage() {
     }, [event])
 
     function validateEvent(): void {
-        console.log(event);
         var valid: boolean = true;
 
-        valid &&= event.name && event.name !== "";
-        valid &&= event.eventType !== EventTypes.UNKNOWN || event.eventType !== null;
+        let today = dayjs().hour(0).minute(0).second(0).millisecond(0);
+
+        valid &&= !utils.isNullOrUndefined(event.name) && event.name !== "";
+
+        valid &&= event.eventType !== EventTypes.UNKNOWN && event.eventType !== null;
 
         if (event.eventType === EventTypes.DATE_RANGE) {
-            valid &&= event.fromDate !== null;
-            valid &&= event.toDate !== null;
+
+            valid &&= !utils.isNullOrUndefined(event.fromDate) && !utils.isNullOrUndefined(event.toDate);
+
+            valid &&= !utils.isNullOrUndefined(event.toDate) && event.toDate!.unix() > today.unix();
+
+            valid &&= !utils.isNullOrUndefined(event.fromDate) && event.fromDate!.unix() >= today.unix();
+
+            valid &&= !utils.isNullOrUndefined(event.fromDate) && !utils.isNullOrUndefined(event.toDate) && event.toDate!.unix() > event.fromDate!.unix();
+
+            valid &&= !utils.isNullOrUndefined(event.fromDate) && !utils.isNullOrUndefined(event.toDate) && event.toDate!.diff(event.fromDate!, "days") >= 1;
+
+            valid &&= !utils.isNullOrUndefined(event.fromDate) && !utils.isNullOrUndefined(event.toDate) && event.toDate!.diff(event.fromDate!, "days") <= 14;
         }
 
         if (event.eventType === EventTypes.SPECIFIC_DATE) {
-            valid &&= event.fromDate !== null;
+            valid &&= !utils.isNullOrUndefined(event.fromDate);
+
+            valid &&= !utils.isNullOrUndefined(event.fromDate) && event.fromDate!.unix() >= today.unix();
         }
 
         setEventValid(valid);
     }
 
     function saveEvent() {
-        fetch("/api/events", {
+        utils.showSpinner();
+
+        utils.performRequest("/api/events", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -50,10 +68,13 @@ export default function NewEventPage() {
                 duration: event.duration
             })
         })
-        .then(resp => resp.json())
         .then(resp => {
-            navigate(resp.result.snowflake_id)
+            navigate(resp.snowflake_id)
         })
+        .catch(err => {
+            toast.error(err)
+        })
+        .finally(() => utils.hideSpinner());
     }
 
     return (
@@ -146,8 +167,9 @@ export default function NewEventPage() {
                 {
                     event.eventType == EventTypes.SPECIFIC_DATE &&
                     <Grid xs={12}>
-                        <DateTimePicker
+                        <DatePicker
                             sx={{ width: "100%" }}
+                            minDate={dayjs()}
                             value={event.fromDate}
                             onChange={(value) => {
                                 event.fromDate = value ?? null;
@@ -160,8 +182,9 @@ export default function NewEventPage() {
                 {
                     event.eventType == EventTypes.DATE_RANGE &&
                     <Grid xs={12} sm={6}>
-                        <DateTimePicker
+                        <DatePicker
                             sx={{ width: "100%" }}
+                            minDate={dayjs()}
                             value={event.fromDate}
                             onChange={(value) => {
                                 event.fromDate = value ?? null;
@@ -174,8 +197,10 @@ export default function NewEventPage() {
                 {
                     event.eventType == EventTypes.DATE_RANGE &&
                     <Grid xs={12} sm={6}>
-                        <DateTimePicker
+                        <DatePicker
                             sx={{ width: "100%" }}
+                            minDate={event.fromDate?.add(1, "day") ?? dayjs().add(1, "day")}
+                            maxDate={event.fromDate?.add(14, "day") ?? dayjs().add(14, "day")}
                             value={event.toDate}
                             onChange={(value) => {
                                 event.toDate = value ?? null;

@@ -1,6 +1,8 @@
+use std::net::SocketAddr;
+
 use axum::{
-    extract::{Path, State},
-    Json,
+    extract::{Path, State, ConnectInfo},
+    Json, http::StatusCode, Extension,
 };
 use chrono::{DateTime, TimeZone, Utc};
 use rand::{distributions::Alphanumeric, Rng};
@@ -13,7 +15,7 @@ use crate::{
     entity::{
         availability::Availability,
         event::{Event, EventType},
-    },
+    }
 };
 
 #[derive(Deserialize)]
@@ -41,7 +43,6 @@ pub struct EventDto {
 pub struct CreateAvailabilitiesDto {
     availabilities: Vec<CreateAvailabilityDto>,
     user_email: Option<String>,
-    user_ip: String,
     user_name: String,
 }
 
@@ -67,7 +68,7 @@ pub async fn create_event(
 
     let mut conn = match app_state.db_pool.acquire().await {
         Ok(c) => c,
-        Err(e) => return api::internal_server_error(e),
+        Err(e) => return api::internal_server_error(e.into()),
     };
 
     let res = conn
@@ -82,9 +83,31 @@ pub async fn create_event(
                 let event_type: EventType = dto.event_type.into();
 
                 if matches!(event_type, EventType::Unknown) {
-                    return Err(ApplicationError::new(
-                        "Unknown event type, invalid variant.".to_string(),
-                    ));
+                    return Err(ApplicationError::new("Unknown event type, invalid variant.".to_string(), StatusCode::UNPROCESSABLE_ENTITY));
+                }
+
+                if matches!(event_type, EventType::SpecificDate) && dto.from_date.is_none() {
+                    return Err(ApplicationError::new("SpecificDate event type supplied, but missing from_date".to_string(), StatusCode::UNPROCESSABLE_ENTITY));
+                }
+
+                if matches!(event_type, EventType::DateRange) {
+                    match (dto.from_date, dto.to_date) {
+                        (Some(from), Some(to)) => {
+                            if from >= to {
+                                return Err(ApplicationError::new("Supplied from_date is later than or equal to to_date".to_string(), StatusCode::UNPROCESSABLE_ENTITY));
+                            }
+
+                            if (to - from).num_days() < 1 {
+                                return Err(ApplicationError::new("Difference between from_date and to_date is less than 1 day".to_string(), StatusCode::UNPROCESSABLE_ENTITY));
+                            }
+
+                            if (to - from).num_days() > 14 {
+                                return Err(ApplicationError::new("Difference between from_date and to_date is greater than 14 days ( current supported maximum )".to_string(), StatusCode::UNPROCESSABLE_ENTITY));
+                            }
+                        },
+                        _ => return Err(ApplicationError::new("DateRange event type supplied, but missing either from_date or to_date".to_string(), StatusCode::UNPROCESSABLE_ENTITY))
+                    }
+
                 }
 
                 let event_id = db::insert_event_and_fetch_id(
@@ -117,7 +140,7 @@ pub async fn create_event(
         })
         .await;
 
-    api::ok::<EventDto, ApplicationError>(res)
+    api::ok::<EventDto>(res)
 }
 
 pub async fn fetch_event(
@@ -126,7 +149,7 @@ pub async fn fetch_event(
 ) -> UniversalResponseDto<EventDto> {
     let mut conn = match app_state.db_pool.acquire().await {
         Ok(c) => c,
-        Err(e) => return api::internal_server_error(e),
+        Err(e) => return api::internal_server_error(e.into()),
     };
 
     let res = conn
@@ -147,35 +170,39 @@ pub async fn fetch_event(
         })
         .await;
 
-    api::ok::<EventDto, ApplicationError>(res)
+    api::ok::<EventDto>(res)
 }
 
 pub async fn create_availabilities(
     State(app_state): State<AppState>,
     Path(event_snowflake_id): Path<String>,
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
     Json(dto): Json<CreateAvailabilitiesDto>,
 ) -> UniversalResponseDto<()> {
     let mut conn = match app_state.db_pool.acquire().await {
         Ok(c) => c,
-        Err(e) => return api::internal_server_error(e),
+        Err(e) => return api::internal_server_error(e.into()),
     };
 
     let res = conn
         .transaction(|txn| {
             Box::pin(async move {
+                let user_ip = format!("{}", addr.ip());
+
                 let event = db::fetch_event_by_snowflake_id(txn, event_snowflake_id).await?;
 
                 let current_availabilities = db::fetch_event_availabilities(txn, event.id).await?;
 
                 let already_submitted = current_availabilities.iter().any(|a| {
-                    (dto.user_email.is_none() && a.user_email == dto.user_email)
-                        || a.user_ip == dto.user_ip
+                    (dto.user_email.is_some() && a.user_email.is_some() && a.user_email == dto.user_email)
+                        || a.user_ip == user_ip
                         || a.user_name == dto.user_name
                 });
 
                 if already_submitted {
                     return Err(ApplicationError::new(
                         "Availability already submitted".to_string(),
+                        StatusCode::UNPROCESSABLE_ENTITY
                     ));
                 }
 
@@ -190,7 +217,7 @@ pub async fn create_availabilities(
                             from_date: a.from_date.naive_utc(),
                             to_date: a.to_date.naive_utc(),
                             user_email: dto.user_email.clone(),
-                            user_ip: dto.user_ip.clone(),
+                            user_ip: user_ip.clone(),
                             user_name: dto.user_name.clone(),
                         },
                     )
@@ -202,7 +229,7 @@ pub async fn create_availabilities(
         })
         .await;
 
-    api::ok::<(), ApplicationError>(res)
+    api::ok::<()>(res)
 }
 
 pub async fn fetch_availabilities(
@@ -211,7 +238,7 @@ pub async fn fetch_availabilities(
 ) -> UniversalResponseDto<Vec<AvailabilityDto>> {
     let mut conn = match app_state.db_pool.acquire().await {
         Ok(c) => c,
-        Err(e) => return api::internal_server_error(e),
+        Err(e) => return api::internal_server_error(e.into()),
     };
 
     let res = conn
@@ -234,5 +261,5 @@ pub async fn fetch_availabilities(
         })
         .await;
 
-    api::ok::<Vec<AvailabilityDto>, ApplicationError>(res)
+    api::ok::<Vec<AvailabilityDto>>(res)
 }

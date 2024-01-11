@@ -3,6 +3,7 @@ import './App.css'
 import RootLayout from './pages/RootLayout'
 import NewEventPage from './pages/NewEventPage'
 import ExistingEventPage from './pages/ExistingEventPage'
+import ThankYouPage from './pages/ThankYouPage'
 
 function App() {
   return (
@@ -10,6 +11,7 @@ function App() {
       <Routes>
         <Route path="/" element={<NewEventPage />} />
         <Route path="/:eventId" element={<ExistingEventPage />} />
+        <Route path="/thank-you" element={<ThankYouPage />} />
       </Routes>
     </RootLayout>
   )

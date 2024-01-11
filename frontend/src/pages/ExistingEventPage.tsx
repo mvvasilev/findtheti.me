@@ -1,30 +1,179 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import { Event, createEvent } from '../types/Event';
+import { useNavigate, useParams } from "react-router-dom";
+import { Event, EventTypes, createEvent } from '../types/Event';
 import Grid from '@mui/material/Unstable_Grid2'
 import { Button, TextField, Typography } from "@mui/material";
 import AvailabilityPicker from "../components/AvailabilityPicker";
-import dayjs from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 import utils from "../utils";
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+import localizedFormat from 'dayjs/plugin/localizedFormat';
+import duration from 'dayjs/plugin/duration';
+import { AvailabilityDay, AvailabilityTime, OthersDays } from "../types/Availabilities";
+import toast from "react-hot-toast";
+
+dayjs.extend(utc)
+dayjs.extend(timezone)
+dayjs.extend(localizedFormat)
+dayjs.extend(duration);
 
 export default function ExistingEventPage() {
+    const navigate = useNavigate(); 
+
     let { eventId } = useParams();
 
+    const [canSubmit, setCanSubmit] = useState<boolean>(false);
     const [event, setEvent] = useState<Event>(createEvent());
+    const [days, setDays] = useState<AvailabilityDay[]>([]);
+    const [othersDays, setOthersDays] = useState<OthersDays[]>([]);
+    const [userName, setUserName] = useState<String | undefined>(undefined);
 
     useEffect(() => {
-        fetch(`/api/events/${eventId}`)
-            .then(resp => resp.json())
-            .then(resp => setEvent({
-                name: resp.result?.name,
-                description: resp.result?.description,
-                fromDate: dayjs.utc(resp.result?.from_date),
-                toDate: dayjs.utc(resp.result?.to_date),
-                eventType: resp.result?.event_type,
-                snowflakeId: resp.result?.snowflake_id,
-                duration: resp.result?.duration
-            }));
+        utils.showSpinner();
+        
+        Promise.all([
+            utils.performRequest(`/api/events/${eventId}`)
+                .then(result => setEvent({
+                    name: result?.name,
+                    description: result?.description,
+                    fromDate: dayjs.utc(result?.from_date),
+                    toDate: dayjs.utc(result?.to_date),
+                    eventType: result?.event_type,
+                    snowflakeId: result?.snowflake_id,
+                    duration: result?.duration
+                }))
+                .catch(e => toast.error(e)),
+        
+            utils.performRequest(`/api/events/${eventId}/availabilities`)
+                .then((result: [{ id: number, from_date: string, to_date: string, user_name: string }]) => {
+                    let othersDays: OthersDays[] = [];
+                    let localTimezone = dayjs.tz.guess();
+
+                    for (const availability of result) {
+                        let fromDate = dayjs(availability.from_date).tz(localTimezone);
+                        let toDate = dayjs(availability.to_date).tz(localTimezone);
+
+                        var userTimes = othersDays.find(d => d.userName === availability.user_name);
+
+                        if (!userTimes) {
+                            userTimes = { userName: availability.user_name, days: []} as OthersDays;
+
+                            othersDays.push(userTimes);
+                        }
+
+                        let availabilityDay = fromDate.hour(0).minute(0).second(0).millisecond(0);
+
+                        var day = userTimes.days.find(d => d.forDate.unix() === availabilityDay.unix());
+
+                        if (!day) {
+                            day = {
+                                forDate: availabilityDay,
+                                availableTimes: []
+                            } as AvailabilityDay;
+
+                            userTimes.days.push(day);
+                        }
+
+                        day.availableTimes.push({
+                            fromTime: fromDate,
+                            toTime: toDate
+                        } as AvailabilityTime)
+                    }
+                    
+                    setOthersDays(othersDays);
+                })
+                .catch(e => toast.error(e))
+        ])
+        .finally(() => utils.hideSpinner());;
+
     }, [eventId]);
+
+    useEffect(() => {
+        document.title = `findtheti.me - ${event.name}`;
+    }, [event])
+
+    useEffect(() => {
+        if (event.fromDate === null || event.toDate === null || event.eventType === null) {
+            return;
+        }
+
+        let localTimezone = dayjs.tz.guess();
+
+        let localFromDate = event.fromDate.tz(localTimezone);
+        let localToDate = event.toDate.tz(localTimezone);
+
+        switch (event.eventType) {
+            case EventTypes.SPECIFIC_DATE: {
+                createAvailabilitiesBasedOnInitialDate(localFromDate, 1);
+                break;
+            }
+            case EventTypes.DATE_RANGE: {
+                createAvailabilitiesBasedOnInitialDate(localFromDate, Math.abs(localFromDate.diff(localToDate, "day", false)));
+                break;
+            }
+            case EventTypes.DAY: {
+                createAvailabilitiesBasedOnUnspecifiedInitialDate(1, localTimezone);
+                break;
+            }
+            case EventTypes.WEEK: {
+                createAvailabilitiesBasedOnUnspecifiedInitialDate(7, localTimezone);
+                break;
+            }
+        }
+    }, [event]);
+
+    useEffect(() => {
+        var valid = !utils.isNullOrUndefined(userName) && userName !== "";
+
+        valid &&= days.some(day => day.availableTimes.length > 0);
+
+        setCanSubmit(valid);
+    }, [userName, days]);
+
+    const createAvailabilitiesBasedOnUnspecifiedInitialDate = (numberOfDays: number, tz: string) => {
+        createAvailabilitiesBasedOnInitialDate(dayjs.tz("1970-01-05 00:00:00", tz), numberOfDays);
+    }
+
+    const createAvailabilitiesBasedOnInitialDate = (date: Dayjs, numberOfDays: number) => {
+        let availabilities: AvailabilityDay[] = [];
+
+        for (var i: number = 0; i < numberOfDays; i++) {
+            let availability: AvailabilityDay = {
+                forDate: date.add(i, "day").startOf("day"),
+                availableTimes: []
+            }
+
+            availabilities.push(availability);
+        }
+
+        setDays(availabilities);
+    }
+
+    const submitAvailabilities = () => {
+        utils.showSpinner();
+
+        let body = {
+            user_name: userName,
+            availabilities: days.flatMap(day => day.availableTimes.map(a => {
+                return {
+                    from_date: a.fromTime.utc(),
+                    to_date: a.toTime.utc()
+                }
+            }))
+        };
+
+        utils.performRequest(`/api/events/${eventId}/availabilities`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(body)
+        })
+        .then(_ => navigate("/thank-you"))
+        .catch(e => toast.error(e))
+        .finally(() => utils.hideSpinner());
+    };
 
     return (
         <Grid container sx={{ p: 2 }} spacing={1}>
@@ -49,29 +198,41 @@ export default function ExistingEventPage() {
                 {
                     (event.fromDate !== null && event.toDate !== null && event.eventType !== null) &&
                     <AvailabilityPicker 
-                        fromDate={event.fromDate}
-                        toDate={event.toDate}
+                        days={days}
+                        setDays={(days) => setDays(days)}
+                        othersAvailabilities={othersDays}
                         eventType={event.eventType}
                         availabilityDurationInMinutes={event.duration}
                     />
                 }
+                <Typography pt={1} fontSize={"0.65em"}>
+                    Left-click to select when you're available, right-click to remove the highlighted hours.
+                </Typography>
             </Grid>
             <Grid xs={0} md={3}></Grid>
             <Grid xs={12} md={6} container spacing={1}>
                 <Grid xs={12} sm={9}>
                     <TextField
                         sx={{ width: "100%" }}
-                        // TODO
-                        // value={event.description}
-                        // onChange={(e) => {
-                        //     event.description = e.target.value;
-                        //     setEvent({...event});
-                        // }}
+                        value={userName || ""}
+                        onChange={(e) => {
+                            if (e.target.value?.length > 100) {
+                                e.preventDefault();
+                                return;
+                            }
+
+                            setUserName(e.target.value);
+                        }}
                         label="Your Name"
                     />
                 </Grid>
                 <Grid xs={12} sm={3}>
-                    <Button sx={{ width: "100%", height: "100%" }} variant="contained">
+                    <Button 
+                        sx={{ width: "100%", height: "100%" }} 
+                        variant="contained" 
+                        disabled={!canSubmit}
+                        onClick={(_) => submitAvailabilities()}
+                    >
                         <Typography>Submit</Typography>
                     </Button>
                 </Grid>

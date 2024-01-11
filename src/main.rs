@@ -30,7 +30,7 @@ async fn main() {
 
     let listener = TcpListener::bind(addr).await.unwrap();
 
-    axum::serve(listener, routes.into_make_service())
+    axum::serve(listener, routes.into_make_service_with_connect_info::<SocketAddr>())
         .await
         .unwrap();
 }

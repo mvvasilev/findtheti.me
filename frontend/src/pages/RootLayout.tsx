@@ -1,5 +1,5 @@
 import { ThemeProvider } from "@emotion/react";
-import { CssBaseline, Divider, Paper, createTheme } from "@mui/material";
+import { Backdrop, CircularProgress, CssBaseline, Divider, Paper, createTheme } from "@mui/material";
 import Grid from '@mui/material/Unstable_Grid2'
 import GithubCorner from "react-github-corner";
 import Header from "../components/Header";
@@ -7,7 +7,10 @@ import Footer from "../components/Footer";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import dayjs from "dayjs";
-import * as utc from 'dayjs/plugin/utc';
+import utc from 'dayjs/plugin/utc';
+import { Toaster } from "react-hot-toast";
+import { useEffect, useState } from "react";
+import utils from "../utils";
 
 dayjs.extend(utc);
 
@@ -17,10 +20,38 @@ const theme = createTheme({
     }
 });
 
-export default function RootLayout(props: { children: React.ReactNode }) {
+const RootLayout = (props: { children: React.ReactNode }) => {
+
+    const [spinner, showSpinner] = useState<boolean>(false);
+
+    useEffect(() => {
+        window.addEventListener("onSpinnerStatusChange", () => {
+            showSpinner(utils.isSpinnerShown());
+        });
+    }, []);
+
     return (
         <ThemeProvider theme={theme}>
             <CssBaseline/>
+
+            {
+                <Backdrop
+                    sx={{
+                        color: '#fff',
+                        zIndex: 2147483647
+                    }}
+                    open={spinner}
+                >
+                    <CircularProgress
+                        sx={{
+                            position: "absolute",
+                            zIndex: 2147483647,
+                            top: "50%",
+                            left: "50%"
+                        }}
+                    />
+                </Backdrop>
+            }
 
             <GithubCorner
                 href={"https://github.com/mvvasilev/findtheti.me"}
@@ -67,6 +98,23 @@ export default function RootLayout(props: { children: React.ReactNode }) {
                     </Grid>
                 </LocalizationProvider>
             </Paper>
+
+            <Toaster
+                toastOptions={{
+                    success: {
+                        style: {
+                            background: '#dad7cd',
+                        },
+                    },
+                    error: {
+                        style: {
+                            background: '#ff8fab',
+                        },
+                    },
+                }}
+            />
         </ThemeProvider>
     );
 };
+
+export default RootLayout;
