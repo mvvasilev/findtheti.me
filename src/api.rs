@@ -46,7 +46,9 @@ pub(crate) fn error<T: Serialize>(e: ApplicationError) -> UniversalResponseDto<T
     UniversalResponseDto {
         status: e.status,
         result: None,
-        error: Some(ErrorDto { message: format!("{}", e)})
+        error: Some(ErrorDto {
+            message: format!("{}", e),
+        }),
     }
 }
 
@@ -128,7 +130,7 @@ impl From<sqlx::Error> for ApplicationError {
     fn from(value: sqlx::Error) -> Self {
         Self {
             msg: value.to_string(),
-            status: StatusCode::INTERNAL_SERVER_ERROR
+            status: StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 }
@@ -137,7 +139,7 @@ impl From<MigrateError> for ApplicationError {
     fn from(value: MigrateError) -> Self {
         Self {
             msg: value.to_string(),
-            status: StatusCode::INTERNAL_SERVER_ERROR
+            status: StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 }
@@ -146,7 +148,7 @@ impl From<VarError> for ApplicationError {
     fn from(value: VarError) -> Self {
         Self {
             msg: value.to_string(),
-            status: StatusCode::INTERNAL_SERVER_ERROR
+            status: StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 }

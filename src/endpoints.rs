@@ -1,8 +1,9 @@
 use std::net::SocketAddr;
 
 use axum::{
-    extract::{Path, State, ConnectInfo},
-    Json, http::StatusCode,
+    extract::{ConnectInfo, Path, State},
+    http::StatusCode,
+    Json,
 };
 use chrono::{DateTime, TimeZone, Utc};
 use rand::{distributions::Alphanumeric, Rng};
@@ -15,7 +16,7 @@ use crate::{
     entity::{
         availability::Availability,
         event::{Event, EventType},
-    }
+    },
 };
 
 #[derive(Deserialize)]
@@ -25,7 +26,7 @@ pub struct CreateEventDto {
     name: String,
     description: Option<String>,
     event_type: String,
-    duration: i32
+    duration: i32,
 }
 
 #[derive(Serialize)]
@@ -36,7 +37,7 @@ pub struct EventDto {
     name: String,
     description: Option<String>,
     event_type: String,
-    duration: i32
+    duration: i32,
 }
 
 #[derive(Deserialize)]
@@ -164,7 +165,7 @@ pub async fn fetch_event(
                     name: event.name,
                     description: event.description,
                     event_type: event.event_type.to_string(),
-                    duration: event.duration
+                    duration: event.duration,
                 })
             })
         })
@@ -194,7 +195,9 @@ pub async fn create_availabilities(
                 let current_availabilities = db::fetch_event_availabilities(txn, event.id).await?;
 
                 let already_submitted = current_availabilities.iter().any(|a| {
-                    (dto.user_email.is_some() && a.user_email.is_some() && a.user_email == dto.user_email)
+                    (dto.user_email.is_some()
+                        && a.user_email.is_some()
+                        && a.user_email == dto.user_email)
                         || a.user_ip == user_ip
                         || a.user_name == dto.user_name
                 });
@@ -202,7 +205,7 @@ pub async fn create_availabilities(
                 if already_submitted {
                     return Err(ApplicationError::new(
                         "Availability already submitted".to_string(),
-                        StatusCode::UNPROCESSABLE_ENTITY
+                        StatusCode::UNPROCESSABLE_ENTITY,
                     ));
                 }
 

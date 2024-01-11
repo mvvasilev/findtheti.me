@@ -10,7 +10,7 @@ pub(crate) struct Event {
     pub from_date: Option<NaiveDateTime>,
     pub to_date: Option<NaiveDateTime>,
     pub event_type: EventType,
-    pub duration: i32
+    pub duration: i32,
 }
 
 #[derive(Debug)]

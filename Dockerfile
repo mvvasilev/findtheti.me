@@ -52,7 +52,7 @@ RUN chown -R appuser ./findtheti-me
 
 USER appuser
 
-ENV RUST_LOG="findtheti-me=debug,info"
+ENV LOG_LEVEL=info
 ENV EVENT_UID_SIZE=20
 
 WORKDIR ./findtheti-me

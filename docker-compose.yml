@@ -1,0 +1,21 @@
+version: "3.4"
+
+services:
+
+  postgresql:
+    image: "docker.io/library/postgres:16-alpine"
+    restart: unless-stopped
+    volumes: 
+      - '/data/findtheti-me/postgres_data:/var/lib/postgresql/data'
+    environment:
+      POSTGRES_PASSWORD: ${PG_PASS:?database password required}
+      POSTGRES_USER: ${PG_USER:-findthetime}
+      POSTGRES_DB: ${PG_DB:-findthetime}
+
+  findthetime:
+    image: "docker.io/mvv97/findthetime:latest"
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: "postgres://${PG_USER:-findthetime}:${PG_PASS}@postgresql/${PG_DB:-findthetime}"
+    ports:
+      - '8080:8080'
