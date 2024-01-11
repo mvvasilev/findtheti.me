@@ -13,6 +13,7 @@ To use `findtheti.me` with docker, simply run
 ```sh
 docker run 
     -e DATABASE_URL='postgresql://{postgres user}:{postgres password}@{postgres host}/{postgres database}' 
+    -p {port to run on}:8080
     mvv97/findthetime
 ```
 
