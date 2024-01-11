@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 
 use axum::{
     extract::{Path, State, ConnectInfo},
-    Json, http::StatusCode, Extension,
+    Json, http::StatusCode,
 };
 use chrono::{DateTime, TimeZone, Utc};
 use rand::{distributions::Alphanumeric, Rng};
