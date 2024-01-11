@@ -1,8 +1,8 @@
-use std::net::SocketAddr;
+use std::net::{SocketAddr, IpAddr};
 
 use axum::{
     extract::{ConnectInfo, Path, State},
-    http::StatusCode,
+    http::{StatusCode, HeaderMap},
     Json,
 };
 use chrono::{DateTime, TimeZone, Utc};
@@ -178,6 +178,7 @@ pub async fn create_availabilities(
     State(app_state): State<AppState>,
     Path(event_snowflake_id): Path<String>,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    headers: HeaderMap,
     Json(dto): Json<CreateAvailabilitiesDto>,
 ) -> UniversalResponseDto<()> {
     let mut conn = match app_state.db_pool.acquire().await {
@@ -185,10 +186,17 @@ pub async fn create_availabilities(
         Err(e) => return api::internal_server_error(e.into()),
     };
 
+    let x_real_ip_header = headers.get("X-Real-IP").and_then(|v| v.to_str().ok()).and_then(|s| s.parse::<IpAddr>().ok());
+
+    let ip_compare_against = match x_real_ip_header {
+        Some(ip) => ip,
+        None => addr.ip(),
+    };
+
     let res = conn
         .transaction(|txn| {
             Box::pin(async move {
-                let user_ip = format!("{}", addr.ip());
+                let remote_ip = format!("{}", ip_compare_against);
 
                 let event = db::fetch_event_by_snowflake_id(txn, event_snowflake_id).await?;
 
@@ -198,7 +206,7 @@ pub async fn create_availabilities(
                     (dto.user_email.is_some()
                         && a.user_email.is_some()
                         && a.user_email == dto.user_email)
-                        || a.user_ip == user_ip
+                        || a.user_ip == remote_ip
                         || a.user_name == dto.user_name
                 });
 
@@ -220,7 +228,7 @@ pub async fn create_availabilities(
                             from_date: a.from_date.naive_utc(),
                             to_date: a.to_date.naive_utc(),
                             user_email: dto.user_email.clone(),
-                            user_ip: user_ip.clone(),
+                            user_ip: remote_ip.clone(),
                             user_name: dto.user_name.clone(),
                         },
                     )

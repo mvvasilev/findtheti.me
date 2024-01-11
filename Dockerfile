@@ -14,16 +14,15 @@ RUN cargo build --release
 
 ### Build Front-End ###
 
-FROM node:lts as nodebuilder
+FROM node:21 as nodebuilder
 
 WORKDIR /app
 
-COPY ./frontend/package*.json ./
-COPY ./frontend/tsconfig*.json ./
-
-RUN yarn install --prefer-offline --frozen-lockfile --non-interactive --production=true
-
 COPY ./frontend ./
+
+RUN yarn install --prefer-offline --frozen-lockfile --non-interactive
+
+ENV NODE_ENV=production
 
 RUN yarn build
 

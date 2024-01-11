@@ -44,7 +44,7 @@ services:
 ### Advanced (Without Docker)
 
 1. Compile Backend (`cargo build --release`)
-2. Build Frontend (`cd frontend && yarn install --production && yarn build`)
+2. Build Frontend (`cd frontend && yarn install && yarn build`)
 3. Copy the `findtheti-me` file from `target/release` and place it into your desired installation folder
 4. Copy the `frontend/dist` folder and place it into the same installation folder, maintaining the directory tree.
 

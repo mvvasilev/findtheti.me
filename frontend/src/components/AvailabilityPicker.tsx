@@ -52,7 +52,7 @@ const AvailabilityPicker = (props: {
             // @ts-ignore
             left: e.target?.offsetLeft - scrollLeft,
             width: element.width,
-            height: (props.availabilityDurationInMinutes/60.0) * 2 * HALFHOUR_DISPLAY_HEIGHT
+            height: ((props.availabilityDurationInMinutes/60.0) * 2 * (HALFHOUR_DISPLAY_HEIGHT + 0.5))
         })
     }
 

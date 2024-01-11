@@ -14,7 +14,7 @@ mod db;
 mod endpoints;
 mod entity;
 
-#[tokio::main(flavor = "multi_thread")]
+#[tokio::main(flavor = "current_thread")]
 async fn main() {
     println!("Starting findtheti.me...");
 
