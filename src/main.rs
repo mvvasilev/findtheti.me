@@ -3,6 +3,7 @@ use std::net::SocketAddr;
 use axum::Router;
 use dotenv::dotenv;
 use tokio::net::TcpListener;
+use tower_http::services::ServeFile;
 use tower_http::trace::TraceLayer;
 use tower_http::{services::ServeDir, trace};
 use tracing::Level;
@@ -33,8 +34,8 @@ async fn main() {
         println!("Initializing frontend routes...");
 
         routes = routes
-            .nest_service("/", ServeDir::new("./frontend/dist"))
-            .fallback_service(ServeDir::new("./frontend/dist"));
+            .nest_service("/assets", ServeDir::new("./frontend/dist/assets"))
+            .fallback_service(ServeFile::new("./frontend/dist/index.html"));
     }
 
     println!("Routes initialized...");
