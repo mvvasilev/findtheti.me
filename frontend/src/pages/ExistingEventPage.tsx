@@ -91,6 +91,24 @@ export default function ExistingEventPage() {
 
     useEffect(() => {
         document.title = `findtheti.me - ${event.name}`;
+
+        const ogTitleMeta = document.querySelector('meta[property="og:title"]');
+        const ogUrlMeta = document.querySelector('meta[property="og:url"]');
+        const ogDescriptionMeta = document.querySelector('meta[property="og:description"]');
+
+        // Update the content of the Open Graph meta tags
+        if (ogTitleMeta) {
+          ogTitleMeta.setAttribute('content', `findtheti.me - ${event.name}`);
+        }
+
+        if (ogDescriptionMeta) {
+            ogDescriptionMeta.setAttribute('content', `${event.description || 'A simple to use scheduling assistant'}`);
+        }
+
+        if (ogUrlMeta) {
+            ogUrlMeta.setAttribute('content', `${window.location.origin}/${eventId}`)
+        }
+
     }, [event])
 
     useEffect(() => {
