@@ -199,7 +199,7 @@ export default function ExistingEventPage() {
                 <Typography>You've been invited to...</Typography>
             </Grid>
             <Grid xs={12}>
-                <Typography variant="h4">{ event.name }</Typography>
+                <Typography variant="h4" sx={{ wordBreak: "break-word" }} noWrap={false}>{ event.name }</Typography>
             </Grid>
             {
                 (event.description !== null) &&

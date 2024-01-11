@@ -89,6 +89,11 @@ export default function NewEventPage() {
                         sx={{ width: "100%" }}
                         value={event.name}
                         onChange={(e) => {
+                            if (e.target.value.length > 90) {
+                                e.preventDefault();
+                                return;
+                            }
+
                             event.name = e.target.value;
                             setEvent({...event});
                         }}
@@ -100,6 +105,11 @@ export default function NewEventPage() {
                         sx={{ width: "100%" }}
                         value={event.description}
                         onChange={(e) => {
+                            if (e.target.value.length > 250) {
+                                e.preventDefault();
+                                return;
+                            }
+
                             event.description = e.target.value;
                             setEvent({...event});
                         }}
