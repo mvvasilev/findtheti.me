@@ -28,15 +28,23 @@ const AvailabilityPickerHour = (props: {
         return `${names.length} ${names.length > 1 ? "people have" : "person has"} marked this time as available: ${names.join(", ")}`;
     }
 
+    const determineCellColor = (isSelected: boolean, availableNames: String[], isDisabled: boolean) => {
+        if (isDisabled) {
+            return '#222222';
+        }
+
+        if (isSelected) {
+            return '#338822';
+        }
+
+        if (availableNames.length > 0) {
+            return heatMapColorforValue(availableNames.length);
+        }
+
+        return 'inherit';
+    }
+
     const heatMapColorforValue = (value: number) => {
-        // if (value === 0 || props.currentTotalRespondents === 0) {
-        //     return 'inherit';
-        // }
-
-        // if (value === 1 && props.currentTotalRespondents === 1) {
-        //     return "hsl(" + 0 + ", 75%, 35%) !important";
-        // }
-
         var h = (1.0 - (value / props.currentTotalRespondents)) * 240
         return "hsl(" + h + ", 75%, 35%) !important";
     }
@@ -57,7 +65,7 @@ const AvailabilityPickerHour = (props: {
             >
                 <Box
                     sx={{
-                        bgcolor: props.fullHourAvailableNames.length > 0 ? heatMapColorforValue(props.fullHourAvailableNames.length) : 'inherit'
+                        bgcolor: determineCellColor(props.isFullHourSelected, props.fullHourAvailableNames, props.disabled)
                     }}
                     className={classNames("full-hour", { "selected-availability": props.isFullHourSelected, "hour-disabled": props.disabled })}
                     height={props.halfHourDisplayHeight}
@@ -86,7 +94,7 @@ const AvailabilityPickerHour = (props: {
             >
                 <Box
                     sx={{
-                        bgcolor: props.halfHourAvailableNames.length > 0 ? heatMapColorforValue(props.halfHourAvailableNames.length) : 'inherit'
+                        bgcolor: determineCellColor(props.isHalfHourSelected, props.halfHourAvailableNames, props.disabled)
                     }}
                     className={classNames("half-hour", { "selected-availability": props.isHalfHourSelected, "hour-disabled": props.disabled })}
                     height={props.halfHourDisplayHeight}
