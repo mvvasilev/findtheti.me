@@ -60,8 +60,6 @@ const AvailabilityPicker = (props: {
         let existingTime = day.availableTimes.findIndex(t => utils.dayjsIsBetweenUnixExclusive(t.fromTime, time, t.toTime));
 
         if (existingTime >= 0) {
-            console.log(`delete ${existingTime} from`, day)
-
             day.availableTimes.splice(existingTime, 1);
 
             let dayIndex = props.days.findIndex(d => d.forDate.unix() === day.forDate.unix());
@@ -178,7 +176,6 @@ const AvailabilityPicker = (props: {
                             key={day.forDate.unix()}
                             day={day} 
                             eventType={props.eventType}
-                            currentTotalRespondents={props.availabilityHeatmap.maxNumberOfRespondents}
                             halfHourDisplayHeight={HALFHOUR_DISPLAY_HEIGHT}
                             availabilityHeatmap={props.availabilityHeatmap}
                             onMouseEnterHalfhour={(e: MouseEvent<HTMLDivElement, globalThis.MouseEvent>, time: dayjs.Dayjs) => {

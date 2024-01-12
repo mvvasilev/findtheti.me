@@ -32,8 +32,6 @@ export default function ExistingEventPage() {
 
     useEffect(() => {
         utils.showSpinner();
-
-        let localTimezone = dayjs.tz.guess();
         
         Promise.all([
             utils.performRequest(`/api/events/${eventId}`)
@@ -47,10 +45,12 @@ export default function ExistingEventPage() {
                     duration: result?.duration
                 }))
                 .catch(e => toast.error(e)),
-        
+
             utils.performRequest(`/api/events/${eventId}/availabilities`)
                 .then((result: [{ id: number, from_date: string, to_date: string, user_name: string }]) => {
                     let heatmap = new UserAvailabilityHeatmap();
+
+                    let localTimezone = dayjs.tz.guess();
 
                     const LENGTH_OF_30_MINUTES_IN_SECONDS = 1800;
 
@@ -61,7 +61,30 @@ export default function ExistingEventPage() {
                         let startUnix = start.unix();
                         let endUnix = end.unix();
 
-                        for (var timeInUnix = startUnix; timeInUnix <= endUnix; timeInUnix += LENGTH_OF_30_MINUTES_IN_SECONDS) {
+                        let startDay = start.startOf("day");
+                        let endDay = end.startOf("day");
+
+                        // Add day on which this availability period is starts on ( timezone difference could be so large that it's in the previous day )
+                        // This day will be disabled and unavailable for adding own availability, unless it falls within the events own from-to range.
+                        if (!heatmap.daysWhenAvailabilitiesPresent.some(d => d.forDate.unix() === startDay.unix())) {
+                            heatmap.daysWhenAvailabilitiesPresent.push({
+                                forDate: startDay,
+                                disabled: true,
+                                availableTimes: []
+                            });
+                        }
+
+                        // Add day on which this availability period is set to end ( timezone difference could be so large that it flips to the next day )
+                        // This day will be disabled and unavailable for adding own availability, unless it falls within the events own from-to range.
+                        if (end.unix() !== endDay.unix() && !heatmap.daysWhenAvailabilitiesPresent.some(d => d.forDate.unix() === endDay.unix())) {
+                            heatmap.daysWhenAvailabilitiesPresent.push({
+                                forDate: endDay,
+                                disabled: true,
+                                availableTimes: []
+                            });
+                        }
+
+                        for (var timeInUnix = startUnix; timeInUnix < endUnix; timeInUnix += LENGTH_OF_30_MINUTES_IN_SECONDS) {
                             heatmap.addName(timeInUnix, availability.user_name);
                         }
                     }
@@ -70,7 +93,7 @@ export default function ExistingEventPage() {
                 })
                 .catch(e => toast.error(e))
         ])
-        .finally(() => utils.hideSpinner());;
+        .finally(() => utils.hideSpinner())
 
     }, [eventId]);
 
@@ -106,25 +129,41 @@ export default function ExistingEventPage() {
         let localFromDate = event.fromDate.tz(localTimezone);
         let localToDate = event.toDate.tz(localTimezone);
 
+        var days: AvailabilityDay[] = [];
+
         switch (event.eventType) {
             case EventTypes.SPECIFIC_DATE: {
-                createAvailabilitiesBasedOnInitialDate(localFromDate, 1);
+                days = createAvailabilitiesBasedOnInitialDate(localFromDate, 1);
                 break;
             }
             case EventTypes.DATE_RANGE: {
-                createAvailabilitiesBasedOnInitialDate(localFromDate, Math.abs(localFromDate.diff(localToDate, "day", false)));
+                days = createAvailabilitiesBasedOnInitialDate(localFromDate, Math.abs(localFromDate.diff(localToDate, "day", false)));
                 break;
             }
             case EventTypes.DAY: {
-                createAvailabilitiesBasedOnUnspecifiedInitialDate(1, localTimezone);
+                days = createAvailabilitiesBasedOnUnspecifiedInitialDate(1, localTimezone);
                 break;
             }
             case EventTypes.WEEK: {
-                createAvailabilitiesBasedOnUnspecifiedInitialDate(7, localTimezone);
+                days = createAvailabilitiesBasedOnUnspecifiedInitialDate(7, localTimezone);
                 break;
             }
         }
-    }, [event]);
+
+        availabilityHeatmap?.daysWhenAvailabilitiesPresent.forEach(hd => {
+            let createdDay = days.find(cd => cd.forDate.unix() === hd.forDate.unix());
+
+            if (createdDay) {
+                createdDay.disabled = false;
+            } else {
+                days.push(hd);
+            }
+        });
+
+        days.sort((a, b) => a.forDate.unix() - b.forDate.unix());
+
+        setDays([...days])
+    }, [event, availabilityHeatmap]);
 
     useEffect(() => {
         var valid = !utils.isNullOrUndefined(userName) && userName !== "";
@@ -134,23 +173,24 @@ export default function ExistingEventPage() {
         setCanSubmit(valid);
     }, [userName, days]);
 
-    const createAvailabilitiesBasedOnUnspecifiedInitialDate = (numberOfDays: number, tz: string) => {
-        createAvailabilitiesBasedOnInitialDate(dayjs.tz("1970-01-05 00:00:00", tz), numberOfDays);
+    const createAvailabilitiesBasedOnUnspecifiedInitialDate = (numberOfDays: number, tz: string): AvailabilityDay[] => {
+        return createAvailabilitiesBasedOnInitialDate(dayjs.tz("1970-01-05 00:00:00", tz), numberOfDays);
     }
 
-    const createAvailabilitiesBasedOnInitialDate = (date: Dayjs, numberOfDays: number) => {
+    const createAvailabilitiesBasedOnInitialDate = (date: Dayjs, numberOfDays: number): AvailabilityDay[] => {
         let availabilities: AvailabilityDay[] = [];
 
         for (var i: number = 0; i < numberOfDays; i++) {
             let availability: AvailabilityDay = {
                 forDate: date.add(i, "day").startOf("day"),
+                disabled: false,
                 availableTimes: []
             }
 
             availabilities.push(availability);
         }
 
-        setDays(availabilities);
+        return availabilities;
     }
 
     const submitAvailabilities = () => {

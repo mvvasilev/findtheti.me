@@ -1,6 +1,6 @@
 import { AvailabilityDay, UserAvailabilityHeatmap } from "../types/Availabilities";
 import utils from "../utils";
-import { Box, Card, Divider, Typography } from "@mui/material";
+import { Box, Card, Divider, Tooltip, Typography } from "@mui/material";
 import { EventTypes } from "../types/Event";
 import AvailabilityPickerHour from "./AvailabilityPickerHour";
 import "./css/AvailabilityPicker.css";
@@ -9,6 +9,7 @@ import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 import React, { useMemo } from "react";
+import { InfoOutlined } from "@mui/icons-material";
 
 dayjs.extend(utc)
 dayjs.extend(timezone)
@@ -18,7 +19,6 @@ const AvailabilityPickerDay = (props: {
     day: AvailabilityDay,
     eventType: String,
     halfHourDisplayHeight: number,
-    currentTotalRespondents: number,
     availabilityHeatmap: UserAvailabilityHeatmap,
     onMouseEnterHalfhour: (e: React.MouseEvent<HTMLDivElement, globalThis.MouseEvent>, time: dayjs.Dayjs) => void,
     onMouseClickHalfhour: (day: AvailabilityDay, time: dayjs.Dayjs, isDelete: boolean) => void
@@ -28,23 +28,32 @@ const AvailabilityPickerDay = (props: {
         let hours: JSX.Element[] = [];
     
         for (var i = 0; i < 24; i++) {
-            let fullHourTime = props.day.forDate.set("hour", i);
-            let halfHourTime = fullHourTime.add(30, "minutes");
+            let fullHourTime = props.day.forDate.hour(i);
+            let halfHourTime = utils.createHalfHourFromFullHour(fullHourTime);
 
             hours.push(
                 <AvailabilityPickerHour 
                     key={fullHourTime.unix()}
+                    disabled={props.day.disabled}
                     dateTime={fullHourTime}
                     halfHourDisplayHeight={props.halfHourDisplayHeight}
-                    currentTotalRespondents={props.currentTotalRespondents}
+                    currentTotalRespondents={props.availabilityHeatmap.maxNumberOfRespondents}
                     namesMarkedFullHourAsAvailable={props.availabilityHeatmap.getNamesAt(fullHourTime.unix())}
-                    namesMarkedHalfHourAsAvailable={props.availabilityHeatmap.getNamesAt(fullHourTime.add(30, "minutes").unix())}
+                    namesMarkedHalfHourAsAvailable={props.availabilityHeatmap.getNamesAt(halfHourTime.unix())}
                     isFullHourSelected={props.day.availableTimes.some(a => utils.dayjsIsBetweenUnixExclusive(a.fromTime, fullHourTime, a.toTime))}
                     isHalfHourSelected={props.day.availableTimes.some(a => utils.dayjsIsBetweenUnixExclusive(a.fromTime, halfHourTime, a.toTime))}  
                     onMouseEnterHalfhour={(e: React.MouseEvent<HTMLDivElement, globalThis.MouseEvent>, time: dayjs.Dayjs): void => {
+                        if (props.day.disabled) {
+                            return;
+                        }
+
                         props.onMouseEnterHalfhour(e, time);
                     }} 
                     onMouseClickOnHalfhour={(time: dayjs.Dayjs, isDelete: boolean): void => {
+                        if (props.day.disabled) {
+                            return;
+                        }
+                        
                         props.onMouseClickHalfhour(props.day, time, isDelete);
                     }}            
                 />
@@ -61,29 +70,33 @@ const AvailabilityPickerDay = (props: {
             className={"day-card"}
             variant="outlined"
         >
-            <Box
-                sx={{ width: "100%" }}
-                padding={1}
-            >
-                {
-                    (props.eventType === EventTypes.WEEK) &&
+                <Box
+                    sx={{ width: "100%" }}
+                    padding={1}
+                    height={"50px"}
+                >
                     <Typography>
-                        { props.day.forDate.format("dddd") }
+                    {
+                        (props.eventType === EventTypes.WEEK) && props.day.forDate.format("dddd")
+                    }
+                    {
+                        (props.eventType === EventTypes.DAY) && "Any Day"
+                    }
+                    {
+                        (props.eventType === EventTypes.DATE_RANGE || props.eventType === EventTypes.SPECIFIC_DATE) && props.day.forDate.format("LL")
+                    }
+                    {   
+                        props.day.disabled &&
+                        <Tooltip 
+                            title={props.day.disabled ? "This day is disabled and only shown as a result of timezone differences between yourself and another respondent" : ""} 
+                            placement="top" 
+                            arrow
+                        >
+                            <InfoOutlined sx={{ ml: 1 }} fontSize="inherit" />
+                        </Tooltip>
+                    }
                     </Typography>
-                }
-                {
-                    (props.eventType === EventTypes.DAY) &&
-                    <Typography>
-                        Any Day
-                    </Typography>
-                }
-                {
-                    (props.eventType === EventTypes.DATE_RANGE || props.eventType === EventTypes.SPECIFIC_DATE) &&
-                    <Typography>                            
-                        { props.day.forDate.format("LL") }
-                    </Typography>
-                }
-            </Box>
+                </Box>
 
             <Divider></Divider>
 

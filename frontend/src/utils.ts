@@ -78,6 +78,9 @@ const utils = {
     },
     isNullOrUndefined: (thing: any): boolean => {
         return thing === null || thing === undefined;
+    },
+    createHalfHourFromFullHour: (fullHour: Dayjs): Dayjs => {
+        return fullHour.add(30, "minutes");
     }
 }
 

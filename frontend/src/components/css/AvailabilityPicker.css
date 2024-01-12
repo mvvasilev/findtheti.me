@@ -22,7 +22,7 @@ div.hour-light {
     background-color: var(--hour-light-color);
 }
 
-div.hour-dark {
+div.hour-disabled {
     width: 100%;
     border-top: solid 1px;
     border-color: var(--hour-border-bolor);
@@ -47,7 +47,7 @@ div.selected-availability {
     background-color: var(--hover-color);
 } */
 
-div.full-hour:active, div.half-hour:active {
+div.full-hour:not(.hour-disabled):active, div.half-hour:not(.hour-disabled):active {
     background-color: var(--active-color);
 }
 

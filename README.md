@@ -52,8 +52,8 @@ services:
 In the end, your folder structure should be as follows:
 ```
 installationDir/
-| |-frontend/
-|   |-dist/
+|-frontend/
+| |-dist/
 |-findtheti-me
 ```
 5. Next, create a `.env` file in the root of the installation directory, and look at `.env.example` for what should be in there

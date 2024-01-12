@@ -14,6 +14,7 @@ dayjs.extend(localizedFormat)
 
 const AvailabilityPickerHour = (props: {
     dateTime: Dayjs,
+    disabled: boolean,
     isFullHourSelected: boolean,
     isHalfHourSelected: boolean,
     halfHourDisplayHeight: number,
@@ -28,12 +29,16 @@ const AvailabilityPickerHour = (props: {
     }
 
     const heatMapColorforValue = (value: number) => {
-        if (value === 0 || props.currentTotalRespondents === 0) {
-            return 'inherit';
-        }
+        // if (value === 0 || props.currentTotalRespondents === 0) {
+        //     return 'inherit';
+        // }
+
+        // if (value === 1 && props.currentTotalRespondents === 1) {
+        //     return "hsl(" + 0 + ", 75%, 35%) !important";
+        // }
 
         var h = (1.0 - (value / props.currentTotalRespondents)) * 240
-        return "hsl(" + h + ", 75%, 35%)";
+        return "hsl(" + h + ", 75%, 35%) !important";
     }
 
     return (
@@ -51,8 +56,10 @@ const AvailabilityPickerHour = (props: {
                 enterDelay={500}
             >
                 <Box
-                    className={classNames("full-hour", { "selected-availability": props.isFullHourSelected })}
-                    bgcolor={heatMapColorforValue(props.namesMarkedFullHourAsAvailable.length)}
+                    sx={{
+                        bgcolor: props.namesMarkedFullHourAsAvailable.length > 0 ? heatMapColorforValue(props.namesMarkedFullHourAsAvailable.length) : 'inherit'
+                    }}
+                    className={classNames("full-hour", { "selected-availability": props.isFullHourSelected, "hour-disabled": props.disabled })}
                     height={props.halfHourDisplayHeight}
                     onMouseEnter={(e) => props.onMouseEnterHalfhour(e, props.dateTime)}
                     onMouseDown={(e) => {
@@ -78,16 +85,18 @@ const AvailabilityPickerHour = (props: {
                 enterDelay={500}
             >
                 <Box
-                    className={classNames("half-hour", { "selected-availability": props.isHalfHourSelected })}
-                    bgcolor={heatMapColorforValue(props.namesMarkedHalfHourAsAvailable.length)}
+                    sx={{
+                        bgcolor: props.namesMarkedHalfHourAsAvailable.length > 0 ? heatMapColorforValue(props.namesMarkedHalfHourAsAvailable.length) : 'inherit'
+                    }}
+                    className={classNames("half-hour", { "selected-availability": props.isHalfHourSelected, "hour-disabled": props.disabled })}
                     height={props.halfHourDisplayHeight}
-                    onMouseEnter={(e) => props.onMouseEnterHalfhour(e, props.dateTime.add(30, "minutes"))}
+                    onMouseEnter={(e) => props.onMouseEnterHalfhour(e, utils.createHalfHourFromFullHour(props.dateTime))}
                     onMouseDown={(e) => {
                         if (e.button !== 0 && e.button !== 2) {
                             return;
                         }
 
-                        props.onMouseClickOnHalfhour(props.dateTime.add(30, "minutes"), e.button === 2);
+                        props.onMouseClickOnHalfhour(utils.createHalfHourFromFullHour(props.dateTime), e.button === 2);
                     }}
                 />
             </DisableableTooltip>

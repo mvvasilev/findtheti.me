@@ -7,6 +7,7 @@ export type AvailabilityTime = {
 
 export type AvailabilityDay = {
     forDate: Dayjs,
+    disabled: boolean,
     availableTimes: AvailabilityTime[]
 }
 
@@ -15,12 +16,11 @@ export type UserAvailabilityHeatmapValue = {
 }
 
 export class UserAvailabilityHeatmap {
-    private map: UserAvailabilityHeatmapValue[];
-    public maxNumberOfRespondents: number;
+    private map: any = {};
+    public maxNumberOfRespondents: number = 0;
+    public daysWhenAvailabilitiesPresent: AvailabilityDay[] = [];
 
     constructor() {
-        this.map = [];
-        this.maxNumberOfRespondents = 0;
     }
 
     addName(unixTime: number, name: String): void {
