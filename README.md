@@ -1,6 +1,6 @@
 
 ![](project-image.png)
-A convenient scheduling assistant written in Rust and React
+A convenient scheduling assistant written in Rust and React, found at https://findtheti.me
 
 ## Setup
 
