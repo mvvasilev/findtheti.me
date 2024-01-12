@@ -1,7 +1,7 @@
 import { Box, Stack } from "@mui/material";
 import { MouseEvent, useState } from "react";
 import "./css/AvailabilityPicker.css";
-import { AvailabilityDay, OthersDay, OthersDays } from "../types/Availabilities";
+import { AvailabilityDay, UserAvailabilityHeatmap } from "../types/Availabilities";
 import utils from "../utils";
 import AvailabilityPickerDay from "./AvailabilityPickerDay";
 import dayjs, { Dayjs } from "dayjs";
@@ -25,7 +25,7 @@ type GhostPreviewProps = {
 const AvailabilityPicker = (props: { 
     days: AvailabilityDay[], 
     setDays: (days: AvailabilityDay[]) => void, 
-    othersAvailabilities: OthersDays[],
+    availabilityHeatmap: UserAvailabilityHeatmap,
     eventType: String,
     availabilityDurationInMinutes: number,
 }) => {
@@ -64,6 +64,14 @@ const AvailabilityPicker = (props: {
 
             day.availableTimes.splice(existingTime, 1);
 
+            let dayIndex = props.days.findIndex(d => d.forDate.unix() === day.forDate.unix());
+
+            if (dayIndex === undefined) {
+                return;
+            } else {
+                props.days.splice(dayIndex, 1, {...day});
+            }
+
             props.setDays([...props.days]);
         }
     }
@@ -81,65 +89,72 @@ const AvailabilityPicker = (props: {
         let existingTimeContainingFrom = day.availableTimes.findIndex(t => utils.dayjsIsBetweenUnixInclusive(t.fromTime, fromTime, t.toTime));
         let existingTimeContainingTo = day.availableTimes.findIndex(t => utils.dayjsIsBetweenUnixInclusive(t.fromTime, toTime, t.toTime));
 
-        // the newly created availability crosses another single one. Both have the same from and to. Do nothing.
-        if (existingTimeContainingFrom >= 0 && existingTimeContainingTo >= 0 && existingTimeContainingFrom === existingTimeContainingTo) {
-            return;
+        switch (true) {
+            // the newly created availability crosses another single one. Both have the same from and to. Do nothing.
+            case (existingTimeContainingFrom >= 0 && existingTimeContainingTo >= 0 && existingTimeContainingFrom === existingTimeContainingTo): {
+                return;
+            }
+            // the newly created availability crosses 2 existing ones. Combine all of them into a single one.
+            case (existingTimeContainingFrom >= 0 && existingTimeContainingTo >= 0 && existingTimeContainingFrom !== existingTimeContainingTo): {
+
+                let newFrom = day.availableTimes[existingTimeContainingFrom].fromTime;
+                let newTo = day.availableTimes[existingTimeContainingTo].toTime;
+    
+                day.availableTimes.splice(existingTimeContainingFrom, 1);
+                day.availableTimes.splice(existingTimeContainingTo, 1);
+    
+                day.availableTimes.push({
+                    fromTime: newFrom,
+                    toTime: newTo
+                });
+
+                break;
+            }
+            // The newly created availability from is within an existing one. Combine the 2 into one.
+            case (existingTimeContainingFrom >= 0 && existingTimeContainingTo < 0): {
+
+                let newFrom = day.availableTimes[existingTimeContainingFrom].fromTime;
+
+                day.availableTimes.splice(existingTimeContainingFrom, 1);
+    
+                day.availableTimes.push({
+                    fromTime: newFrom,
+                    toTime: toTime
+                });
+
+                break;
+            }
+            // The newly created availability to is within an existing one. Combine the 2 into one.
+            case (existingTimeContainingFrom < 0 && existingTimeContainingTo >= 0): {
+
+                let newTo = day.availableTimes[existingTimeContainingTo].toTime;
+
+                day.availableTimes.splice(existingTimeContainingTo, 1);
+    
+                day.availableTimes.push({
+                    fromTime: fromTime,
+                    toTime: newTo
+                });
+
+                break;
+            }
+            default: {
+                day.availableTimes.push({
+                    fromTime: fromTime,
+                    toTime: toTime
+                });
+
+                break;
+            }
         }
 
-        // the newly created availability crosses 2 existing ones. Combine all of them into a single one.
-        if (existingTimeContainingFrom >= 0 && existingTimeContainingTo >= 0 && existingTimeContainingFrom !== existingTimeContainingTo) {
-            let newFrom = day.availableTimes[existingTimeContainingFrom].fromTime;
-            let newTo = day.availableTimes[existingTimeContainingTo].toTime;
+        let dayIndex = props.days.findIndex(d => d.forDate.unix() === day.forDate.unix());
 
-            day.availableTimes.splice(existingTimeContainingFrom, 1);
-            day.availableTimes.splice(existingTimeContainingTo, 1);
-
-            day.availableTimes.push({
-                fromTime: newFrom,
-                toTime: newTo
-            });
-
-            props.setDays([...props.days]);
-
+        if (dayIndex === undefined) {
             return;
+        } else {
+            props.days.splice(dayIndex, 1, {...day});
         }
-
-        // The newly created availability from is within an existing one. Combine the 2 into one.
-        if (existingTimeContainingFrom >= 0 && existingTimeContainingTo < 0) {
-            let newFrom = day.availableTimes[existingTimeContainingFrom].fromTime;
-
-            day.availableTimes.splice(existingTimeContainingFrom, 1);
-
-            day.availableTimes.push({
-                fromTime: newFrom,
-                toTime: toTime
-            });
-
-            props.setDays([...props.days]);
-
-            return;
-        }
-
-        // The newly created availability to is within an existing one. Combine the 2 into one.
-        if (existingTimeContainingFrom < 0 && existingTimeContainingTo >= 0) {
-            let newTo = day.availableTimes[existingTimeContainingTo].toTime;
-
-            day.availableTimes.splice(existingTimeContainingTo, 1);
-
-            day.availableTimes.push({
-                fromTime: fromTime,
-                toTime: newTo
-            });
-
-            props.setDays([...props.days]);
-
-            return;
-        }
-
-        day.availableTimes.push({
-            fromTime: fromTime,
-            toTime: toTime
-        });
 
         props.setDays([...props.days]);
     }
@@ -162,14 +177,10 @@ const AvailabilityPicker = (props: {
                         <AvailabilityPickerDay 
                             key={day.forDate.unix()}
                             day={day} 
-                            eventType={props.eventType} 
+                            eventType={props.eventType}
+                            currentTotalRespondents={props.availabilityHeatmap.maxNumberOfRespondents}
                             halfHourDisplayHeight={HALFHOUR_DISPLAY_HEIGHT}
-                            othersAvailabilityDay={props.othersAvailabilities.map(a => {
-                                return {
-                                    userName: a.userName,
-                                    availableTimes: a.days.find(d => d.forDate.unix() === day.forDate.unix())?.availableTimes ?? []
-                                } as OthersDay;
-                            })}
+                            availabilityHeatmap={props.availabilityHeatmap}
                             onMouseEnterHalfhour={(e: MouseEvent<HTMLDivElement, globalThis.MouseEvent>, time: dayjs.Dayjs) => {
                                 displayGhostPeriod(e, time);
                             }} 

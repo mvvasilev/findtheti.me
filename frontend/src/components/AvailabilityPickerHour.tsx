@@ -17,6 +17,7 @@ const AvailabilityPickerHour = (props: {
     isFullHourSelected: boolean,
     isHalfHourSelected: boolean,
     halfHourDisplayHeight: number,
+    currentTotalRespondents: number,
     namesMarkedFullHourAsAvailable: String[],
     namesMarkedHalfHourAsAvailable: String[],
     onMouseEnterHalfhour: (e: React.MouseEvent<HTMLDivElement, globalThis.MouseEvent>, time: Dayjs) => void,
@@ -24,6 +25,15 @@ const AvailabilityPickerHour = (props: {
 }) => {
     const generateTooltipText = (names: String[]): String => {
         return `${names.length} ${names.length > 1 ? "people have" : "person has"} marked this time as available: ${names.join(", ")}`;
+    }
+
+    const heatMapColorforValue = (value: number) => {
+        if (value === 0 || props.currentTotalRespondents === 0) {
+            return 'inherit';
+        }
+
+        var h = (1.0 - (value / props.currentTotalRespondents)) * 240
+        return "hsl(" + h + ", 75%, 35%)";
     }
 
     return (
@@ -41,7 +51,8 @@ const AvailabilityPickerHour = (props: {
                 enterDelay={500}
             >
                 <Box
-                    className={classNames("full-hour", `hour-available-${props.namesMarkedFullHourAsAvailable.length}`, { "selected-availability": props.isFullHourSelected })}
+                    className={classNames("full-hour", { "selected-availability": props.isFullHourSelected })}
+                    bgcolor={heatMapColorforValue(props.namesMarkedFullHourAsAvailable.length)}
                     height={props.halfHourDisplayHeight}
                     onMouseEnter={(e) => props.onMouseEnterHalfhour(e, props.dateTime)}
                     onMouseDown={(e) => {
@@ -67,7 +78,8 @@ const AvailabilityPickerHour = (props: {
                 enterDelay={500}
             >
                 <Box
-                    className={classNames("half-hour", `hour-available-${props.namesMarkedHalfHourAsAvailable.length}`, { "selected-availability": props.isHalfHourSelected })}
+                    className={classNames("half-hour", { "selected-availability": props.isHalfHourSelected })}
+                    bgcolor={heatMapColorforValue(props.namesMarkedHalfHourAsAvailable.length)}
                     height={props.halfHourDisplayHeight}
                     onMouseEnter={(e) => props.onMouseEnterHalfhour(e, props.dateTime.add(30, "minutes"))}
                     onMouseDown={(e) => {

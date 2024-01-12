@@ -15,50 +15,6 @@
 
 }
 
-div[class*=" hour-available-"]{
-    background-color: #bb00bb;
-}
-
-div.hour-available-0 {
-    background-color: inherit;
-}
-
-div.hour-available-1 {
-    background-color: #330033;
-}
-
-div.hour-available-2 {
-    background-color: #440044;
-}
-
-div.hour-available-3 {
-    background-color: #550055;
-}
-
-div.hour-available-4 {
-    background-color: #660066;
-}
-
-div.hour-available-5 {
-    background-color: #770077;
-}
-
-div.hour-available-6 {
-    background-color: #880088;
-}
-
-div.hour-available-7 {
-    background-color: #990099;
-}
-
-div.hour-available-8 {
-    background-color: #aa00aa;
-}
-
-div.hour-available-9 {
-    background-color: #bb00bb;
-}
-
 div.hour-light {
     width: 100%;
     border-top: solid 1px;
@@ -87,9 +43,9 @@ div.selected-availability {
     background-color: var(--currently-selected-color);
 }
 
-div.full-hour:hover, div.half-hour:hover {
+/* div.full-hour:hover, div.half-hour:hover {
     background-color: var(--hover-color);
-}
+} */
 
 div.full-hour:active, div.half-hour:active {
     background-color: var(--active-color);

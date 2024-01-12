@@ -1,4 +1,4 @@
-import { AvailabilityDay, OthersDay } from "../types/Availabilities";
+import { AvailabilityDay, UserAvailabilityHeatmap } from "../types/Availabilities";
 import utils from "../utils";
 import { Box, Card, Divider, Typography } from "@mui/material";
 import { EventTypes } from "../types/Event";
@@ -8,6 +8,7 @@ import dayjs from "dayjs";
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
+import React, { useMemo } from "react";
 
 dayjs.extend(utc)
 dayjs.extend(timezone)
@@ -17,14 +18,15 @@ const AvailabilityPickerDay = (props: {
     day: AvailabilityDay,
     eventType: String,
     halfHourDisplayHeight: number,
-    othersAvailabilityDay: OthersDay[],
+    currentTotalRespondents: number,
+    availabilityHeatmap: UserAvailabilityHeatmap,
     onMouseEnterHalfhour: (e: React.MouseEvent<HTMLDivElement, globalThis.MouseEvent>, time: dayjs.Dayjs) => void,
     onMouseClickHalfhour: (day: AvailabilityDay, time: dayjs.Dayjs, isDelete: boolean) => void
 }) => {
 
-    const generateHours = (): JSX.Element[] => {
+    const generateHours = useMemo((): JSX.Element[] => {
         let hours: JSX.Element[] = [];
-
+    
         for (var i = 0; i < 24; i++) {
             let fullHourTime = props.day.forDate.set("hour", i);
             let halfHourTime = fullHourTime.add(30, "minutes");
@@ -34,8 +36,9 @@ const AvailabilityPickerDay = (props: {
                     key={fullHourTime.unix()}
                     dateTime={fullHourTime}
                     halfHourDisplayHeight={props.halfHourDisplayHeight}
-                    namesMarkedFullHourAsAvailable={props.othersAvailabilityDay.filter(d => d.availableTimes.some(t => utils.dayjsIsBetweenUnixExclusive(t.fromTime, fullHourTime, t.toTime))).map(d => d.userName)}
-                    namesMarkedHalfHourAsAvailable={props.othersAvailabilityDay.filter(d => d.availableTimes.some(t => utils.dayjsIsBetweenUnixExclusive(t.fromTime, halfHourTime, t.toTime))).map(d => d.userName)}
+                    currentTotalRespondents={props.currentTotalRespondents}
+                    namesMarkedFullHourAsAvailable={props.availabilityHeatmap.getNamesAt(fullHourTime.unix())}
+                    namesMarkedHalfHourAsAvailable={props.availabilityHeatmap.getNamesAt(fullHourTime.add(30, "minutes").unix())}
                     isFullHourSelected={props.day.availableTimes.some(a => utils.dayjsIsBetweenUnixExclusive(a.fromTime, fullHourTime, a.toTime))}
                     isHalfHourSelected={props.day.availableTimes.some(a => utils.dayjsIsBetweenUnixExclusive(a.fromTime, halfHourTime, a.toTime))}  
                     onMouseEnterHalfhour={(e: React.MouseEvent<HTMLDivElement, globalThis.MouseEvent>, time: dayjs.Dayjs): void => {
@@ -49,7 +52,7 @@ const AvailabilityPickerDay = (props: {
         }
 
         return hours;
-    }
+    }, [props.day]);
 
     return (
         <Card
@@ -84,10 +87,10 @@ const AvailabilityPickerDay = (props: {
 
             <Divider></Divider>
 
-            {generateHours()}
+            {generateHours}
 
         </Card>
     );
-}
+};
 
 export default AvailabilityPickerDay;

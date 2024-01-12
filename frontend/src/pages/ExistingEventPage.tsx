@@ -10,7 +10,7 @@ import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 import duration from 'dayjs/plugin/duration';
-import { AvailabilityDay, AvailabilityTime, OthersDays } from "../types/Availabilities";
+import { AvailabilityDay, UserAvailabilityHeatmap } from "../types/Availabilities";
 import toast from "react-hot-toast";
 
 dayjs.extend(utc)
@@ -26,11 +26,13 @@ export default function ExistingEventPage() {
     const [canSubmit, setCanSubmit] = useState<boolean>(false);
     const [event, setEvent] = useState<Event>(createEvent());
     const [days, setDays] = useState<AvailabilityDay[]>([]);
-    const [othersDays, setOthersDays] = useState<OthersDays[]>([]);
+    const [availabilityHeatmap, setAvailabilityHeatmap] = useState<UserAvailabilityHeatmap | undefined>();
     const [userName, setUserName] = useState<String | undefined>(undefined);
 
     useEffect(() => {
         utils.showSpinner();
+
+        let localTimezone = dayjs.tz.guess();
         
         Promise.all([
             utils.performRequest(`/api/events/${eventId}`)
@@ -47,41 +49,23 @@ export default function ExistingEventPage() {
         
             utils.performRequest(`/api/events/${eventId}/availabilities`)
                 .then((result: [{ id: number, from_date: string, to_date: string, user_name: string }]) => {
-                    let othersDays: OthersDays[] = [];
-                    let localTimezone = dayjs.tz.guess();
+                    let heatmap = new UserAvailabilityHeatmap();
+
+                    const LENGTH_OF_30_MINUTES_IN_SECONDS = 1800;
 
                     for (const availability of result) {
-                        let fromDate = dayjs(availability.from_date).tz(localTimezone);
-                        let toDate = dayjs(availability.to_date).tz(localTimezone);
+                        let start = dayjs(availability.from_date).tz(localTimezone);
+                        let end = dayjs(availability.to_date).tz(localTimezone);
 
-                        var userTimes = othersDays.find(d => d.userName === availability.user_name);
+                        let startUnix = start.unix();
+                        let endUnix = end.unix();
 
-                        if (!userTimes) {
-                            userTimes = { userName: availability.user_name, days: []} as OthersDays;
-
-                            othersDays.push(userTimes);
+                        for (var timeInUnix = startUnix; timeInUnix <= endUnix; timeInUnix += LENGTH_OF_30_MINUTES_IN_SECONDS) {
+                            heatmap.addName(timeInUnix, availability.user_name);
                         }
-
-                        let availabilityDay = fromDate.hour(0).minute(0).second(0).millisecond(0);
-
-                        var day = userTimes.days.find(d => d.forDate.unix() === availabilityDay.unix());
-
-                        if (!day) {
-                            day = {
-                                forDate: availabilityDay,
-                                availableTimes: []
-                            } as AvailabilityDay;
-
-                            userTimes.days.push(day);
-                        }
-
-                        day.availableTimes.push({
-                            fromTime: fromDate,
-                            toTime: toDate
-                        } as AvailabilityTime)
                     }
-                    
-                    setOthersDays(othersDays);
+
+                    setAvailabilityHeatmap(heatmap);
                 })
                 .catch(e => toast.error(e))
         ])
@@ -214,17 +198,17 @@ export default function ExistingEventPage() {
             </Grid>
             <Grid xs={12}>
                 {
-                    (event.fromDate !== null && event.toDate !== null && event.eventType !== null) &&
+                    (event.fromDate !== null && event.toDate !== null && event.eventType !== null && availabilityHeatmap) &&
                     <AvailabilityPicker 
                         days={days}
                         setDays={(days) => setDays(days)}
-                        othersAvailabilities={othersDays}
+                        availabilityHeatmap={availabilityHeatmap}
                         eventType={event.eventType}
                         availabilityDurationInMinutes={event.duration}
                     />
                 }
                 <Typography pt={1} fontSize={"0.65em"}>
-                    Left-click to select when you're available, right-click to remove the highlighted hours.
+                    Date and times are in your local timezone. Left-click to select when you're available, right-click to remove the highlighted hours.
                 </Typography>
             </Grid>
             <Grid xs={0} md={3}></Grid>
