@@ -30,6 +30,10 @@ const AvailabilityPickerHour = (props: {
 
     const determineCellColor = (isSelected: boolean, availableNames: String[], isDisabled: boolean) => {
         if (isDisabled) {
+            if (availableNames.length > 0) {
+                return heatMapColorforValue(availableNames.length);
+            }
+
             return '#222222';
         }
 
