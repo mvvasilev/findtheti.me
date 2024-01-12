@@ -38,8 +38,8 @@ const AvailabilityPickerDay = (props: {
                     dateTime={fullHourTime}
                     halfHourDisplayHeight={props.halfHourDisplayHeight}
                     currentTotalRespondents={props.availabilityHeatmap.maxNumberOfRespondents}
-                    namesMarkedFullHourAsAvailable={props.availabilityHeatmap.getNamesAt(fullHourTime.unix())}
-                    namesMarkedHalfHourAsAvailable={props.availabilityHeatmap.getNamesAt(halfHourTime.unix())}
+                    fullHourAvailableNames={props.availabilityHeatmap.getNamesAt(fullHourTime.unix())}
+                    halfHourAvailableNames={props.availabilityHeatmap.getNamesAt(halfHourTime.unix())}
                     isFullHourSelected={props.day.availableTimes.some(a => utils.dayjsIsBetweenUnixExclusive(a.fromTime, fullHourTime, a.toTime))}
                     isHalfHourSelected={props.day.availableTimes.some(a => utils.dayjsIsBetweenUnixExclusive(a.fromTime, halfHourTime, a.toTime))}  
                     onMouseEnterHalfhour={(e: React.MouseEvent<HTMLDivElement, globalThis.MouseEvent>, time: dayjs.Dayjs): void => {

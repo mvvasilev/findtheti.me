@@ -19,8 +19,8 @@ const AvailabilityPickerHour = (props: {
     isHalfHourSelected: boolean,
     halfHourDisplayHeight: number,
     currentTotalRespondents: number,
-    namesMarkedFullHourAsAvailable: String[],
-    namesMarkedHalfHourAsAvailable: String[],
+    fullHourAvailableNames: String[],
+    halfHourAvailableNames: String[],
     onMouseEnterHalfhour: (e: React.MouseEvent<HTMLDivElement, globalThis.MouseEvent>, time: Dayjs) => void,
     onMouseClickOnHalfhour: (time: Dayjs, isDelete: boolean) => void
 }) => {
@@ -47,8 +47,8 @@ const AvailabilityPickerHour = (props: {
             className={"hour-light"}
         >
             <DisableableTooltip 
-                disabled={props.namesMarkedFullHourAsAvailable.length < 1} 
-                title={generateTooltipText(props.namesMarkedFullHourAsAvailable)} 
+                disabled={props.fullHourAvailableNames.length < 1} 
+                title={generateTooltipText(props.fullHourAvailableNames)} 
                 placement="top" 
                 disableInteractive 
                 followCursor={true} 
@@ -57,7 +57,7 @@ const AvailabilityPickerHour = (props: {
             >
                 <Box
                     sx={{
-                        bgcolor: props.namesMarkedFullHourAsAvailable.length > 0 ? heatMapColorforValue(props.namesMarkedFullHourAsAvailable.length) : 'inherit'
+                        bgcolor: props.fullHourAvailableNames.length > 0 ? heatMapColorforValue(props.fullHourAvailableNames.length) : 'inherit'
                     }}
                     className={classNames("full-hour", { "selected-availability": props.isFullHourSelected, "hour-disabled": props.disabled })}
                     height={props.halfHourDisplayHeight}
@@ -76,8 +76,8 @@ const AvailabilityPickerHour = (props: {
                 </Box>
             </DisableableTooltip>
             <DisableableTooltip 
-                disabled={props.namesMarkedHalfHourAsAvailable.length < 1} 
-                title={generateTooltipText(props.namesMarkedHalfHourAsAvailable)} 
+                disabled={props.halfHourAvailableNames.length < 1} 
+                title={generateTooltipText(props.halfHourAvailableNames)} 
                 placement="top" 
                 disableInteractive 
                 followCursor={true} 
@@ -86,7 +86,7 @@ const AvailabilityPickerHour = (props: {
             >
                 <Box
                     sx={{
-                        bgcolor: props.namesMarkedHalfHourAsAvailable.length > 0 ? heatMapColorforValue(props.namesMarkedHalfHourAsAvailable.length) : 'inherit'
+                        bgcolor: props.halfHourAvailableNames.length > 0 ? heatMapColorforValue(props.halfHourAvailableNames.length) : 'inherit'
                     }}
                     className={classNames("half-hour", { "selected-availability": props.isHalfHourSelected, "hour-disabled": props.disabled })}
                     height={props.halfHourDisplayHeight}
