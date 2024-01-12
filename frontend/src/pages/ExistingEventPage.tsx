@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Event, EventTypes, createEvent } from '../types/Event';
 import Grid from '@mui/material/Unstable_Grid2'
-import { Button, TextField, Typography } from "@mui/material";
+import { Button, IconButton, TextField, Tooltip, Typography } from "@mui/material";
 import AvailabilityPicker from "../components/AvailabilityPicker";
 import dayjs, { Dayjs } from "dayjs";
 import utils from "../utils";
@@ -12,6 +12,7 @@ import localizedFormat from 'dayjs/plugin/localizedFormat';
 import duration from 'dayjs/plugin/duration';
 import { AvailabilityDay, UserAvailabilityHeatmap } from "../types/Availabilities";
 import toast from "react-hot-toast";
+import { ContentCopy as CopyToClipboardIcon } from '@mui/icons-material'
 
 dayjs.extend(utc)
 dayjs.extend(timezone)
@@ -183,7 +184,20 @@ export default function ExistingEventPage() {
                 <Typography>You've been invited to...</Typography>
             </Grid>
             <Grid xs={12}>
-                <Typography variant="h4" sx={{ wordBreak: "break-word" }} noWrap={false}>{ event.name }</Typography>
+                <Typography variant="h4" sx={{ wordBreak: "break-word" }} noWrap={false}>
+                    { event.name }
+                    <Tooltip
+                        title={"Copy invite to clipboard"}
+                        arrow
+                    >
+                        <IconButton onClick={() => {
+                            navigator.clipboard.writeText(window.location.toString());
+                            toast('Copied to clipboard', { icon: <CopyToClipboardIcon/> });
+                        }}>
+                            <CopyToClipboardIcon/>
+                        </IconButton>
+                    </Tooltip>
+                </Typography>
             </Grid>
             {
                 (event.description !== null) &&
