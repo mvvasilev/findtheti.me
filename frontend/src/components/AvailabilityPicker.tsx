@@ -57,7 +57,7 @@ const AvailabilityPicker = (props: {
     }
 
     const deleteAvailability = (day: AvailabilityDay, time: Dayjs) => {
-        let existingTime = day.availableTimes.findIndex(t => utils.dayjsIsBetweenUnixExclusive(t.fromTime, time, t.toTime));
+        let existingTime = day.availableTimes.findIndex(t => utils.dayjsIsBetweenUnixInclusive(t.fromTime, time, t.toTime));
 
         if (existingTime >= 0) {
             day.availableTimes.splice(existingTime, 1);
@@ -97,9 +97,8 @@ const AvailabilityPicker = (props: {
 
                 let newFrom = day.availableTimes[existingTimeContainingFrom].fromTime;
                 let newTo = day.availableTimes[existingTimeContainingTo].toTime;
-    
-                day.availableTimes.splice(existingTimeContainingFrom, 1);
-                day.availableTimes.splice(existingTimeContainingTo, 1);
+
+                day.availableTimes = day.availableTimes.filter((_, i) => i !== existingTimeContainingFrom && i !== existingTimeContainingTo);
     
                 day.availableTimes.push({
                     fromTime: newFrom,
@@ -113,9 +112,7 @@ const AvailabilityPicker = (props: {
 
                 let newFrom = day.availableTimes[existingTimeContainingFrom].fromTime;
 
-                day.availableTimes.splice(existingTimeContainingFrom, 1);
-    
-                day.availableTimes.push({
+                day.availableTimes.splice(existingTimeContainingFrom, 1, {
                     fromTime: newFrom,
                     toTime: toTime
                 });
@@ -127,9 +124,7 @@ const AvailabilityPicker = (props: {
 
                 let newTo = day.availableTimes[existingTimeContainingTo].toTime;
 
-                day.availableTimes.splice(existingTimeContainingTo, 1);
-    
-                day.availableTimes.push({
+                day.availableTimes.splice(existingTimeContainingTo, 1, {
                     fromTime: fromTime,
                     toTime: newTo
                 });
