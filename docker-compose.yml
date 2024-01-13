@@ -24,7 +24,7 @@ services:
       SSL_CERT_PATH: '/etc/findtheti-me/certs/server.cert'
       SSL_KEY_PATH: '/etc/findtheti-me/certs/server.key'
     volumes:
-      - '/home/haedhutner/Workspace/findtheti-me/.self-signed:/etc/findtheti-me/certs' 
+      - '~/Workspace/findtheti-me/.self-signed:/etc/findtheti-me/certs' 
     ports:
       - '8080:8080'
       - '8443:8443'
