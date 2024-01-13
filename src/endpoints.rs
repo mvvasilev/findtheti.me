@@ -156,7 +156,11 @@ pub async fn fetch_event(
     let res = conn
         .transaction(|txn| {
             Box::pin(async move {
-                let event = db::fetch_event_by_snowflake_id(txn, event_snowflake_id).await?;
+                let event = match db::fetch_event_by_snowflake_id(txn, event_snowflake_id).await {
+                    Ok(e) => e,
+                    Err(sqlx::Error::RowNotFound) => return Err(ApplicationError::new("No such event found".to_string(), StatusCode::NOT_FOUND)),
+                    Err(e) => return Err(e.into())
+                };
 
                 Ok(EventDto {
                     snowflake_id: event.snowflake_id,

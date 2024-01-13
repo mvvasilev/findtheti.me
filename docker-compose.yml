@@ -3,6 +3,7 @@ version: "3.4"
 services:
 
   postgresql:
+    container_name: db
     image: "docker.io/library/postgres:16-alpine"
     restart: unless-stopped
     volumes: 
@@ -13,9 +14,17 @@ services:
       POSTGRES_DB: ${PG_DB:-findthetime}
 
   findthetime:
-    image: "docker.io/mvv97/findthetime:latest"
+    build: .
     restart: unless-stopped
     environment:
-      DATABASE_URL: "postgres://${PG_USER:-findthetime}:${PG_PASS}@postgresql/${PG_DB:-findthetime}"
+      DATABASE_URL: "postgres://${PG_USER:-findthetime}:${PG_PASS}@db/${PG_DB:-findthetime}"
+      SSL_ENABLED: 'true' # when this is set to false ( default ), the ssl port is not listened to.
+      SSL_REDIRECT: 'true'
+      SSL_PORT: '8443'
+      SSL_CERT_PATH: '/etc/findtheti-me/certs/server.cert'
+      SSL_KEY_PATH: '/etc/findtheti-me/certs/server.key'
+    volumes:
+      - '/home/haedhutner/Workspace/findtheti-me/.self-signed:/etc/findtheti-me/certs' 
     ports:
       - '8080:8080'
+      - '8443:8443'

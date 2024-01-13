@@ -12,6 +12,13 @@ const utils = {
     performRequest: (url: string | URL | Request, options?: RequestInit | undefined): Promise<any> => {
         return fetch(url, options).then(async resp => {
             if (!resp.ok) {
+
+                if (resp.status === 404) {
+                    window.location.replace(`${window.location.origin}/not-found`)
+
+                    throw 'Not Found';
+                }
+
                 let errorTextResult = await resp.text();
 
                 var errorMsg = errorTextResult;

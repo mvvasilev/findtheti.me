@@ -9,15 +9,27 @@ Also, it is only compatible with PostgreSQL at the moment. It is required to hav
 
 ### Simple (With Docker)
 
-To use `findtheti.me` with docker, simply run 
+#### Without SSL
+
 ```sh
 docker run 
     -e DATABASE_URL='postgresql://{postgres user}:{postgres password}@{postgres host}/{postgres database}' 
     -p {port to run on}:8080
-    mvv97/findthetime
+    mvv97/findthetime:latest
 ```
 
-#### Example docker-compose.yml
+#### With SSL
+```sh
+docker run 
+    -e DATABASE_URL='postgresql://{postgres user}:{postgres password}@{postgres host}/{postgres database}' 
+    -e SSL_ENABLED='true'
+    -v /data/findtheti-me/certs:/etc/findtheti-me/certs # Place your cert files in /data/findtheti-me/certs and ensure they have permissions of at least 644
+    -p {http port to run on}:8080 # if SSL_REDIRECT=false, this can be skipped
+    -p {ssl port to run on}:8443
+    mvv97/findthetime:latest
+```
+
+### Example docker-compose.yml
 ```yml
 version: "3.4"
 
@@ -38,9 +50,19 @@ services:
     restart: unless-stopped
     environment:
       DATABASE_URL: "postgres://${PG_USER:-findthetime}:${PG_PASS}@postgresql/${PG_DB:-findthetime}"
+      SSL_ENABLED: 'true' # when this is set to false ( default ), the ssl port is not listened to.
+      SSL_REDIRECT: 'true'
+      SSL_PORT: '8443'
+      SSL_CERT_PATH: '/etc/findtheti-me/certs/server.cert'
+      SSL_KEY_PATH: '/etc/findtheti-me/certs/server.key'
+    volumes:
+      - '/data/findtheti-me/certs:/etc/findtheti-me/certs' 
     ports:
       - '8080:8080'
+      - '8443:8443'
 ```
+
+Ensure you have the necessary environment variables configured: `PG_DB`, `PG_USER` and `PG_PASS`.
 
 ### Advanced (Without Docker)
 
@@ -60,6 +82,21 @@ installationDir/
 
 Finally, run `./findtheti-me` in the root, and the application should start.
 
+### Enable SSL
+
+In order to enable SSL, configure `SSL_ENABLED=true`, `SSL_PORT` with the desired port ( `8443` by default ), and `SSL_CERT_PATH` and `SSL_KEY_PATH`
+with the paths to your certificate and key files ( `/etc/letsencrypt/live/your.domain/cert.pem` and `/etc/letsencrypt/live/your.domain/key.pem`, for example ).
+Ensure the permissions of these files are at least `644`, as the container user will need to be able to read them.
+
+**Note that there is currently no support for encrypted private keys ( those that start with `-----BEGIN ENCRYPTED PRIVATE KEY-----`).
+Attempting to use such will be met with the error:**
+
+```
+Unable to use files configured in 'SSL_CERT_PATH' or 'SSL_KEY_PATH': Custom { kind: Other, error: "private key format not supported" }
+```
+`findtheti.me` will automatically register a listener at the configured `HTTP_PORT` to redirect
+to the configured `SSL_PORT`. To disable this, configure `SSL_REDIRECT=false` ( `true` by default ).
+
 ## Setup For Development
 ### Backend
 1. Create a PostgreSQL database
@@ -69,7 +106,8 @@ Finally, run `./findtheti-me` in the root, and the application should start.
 
 ### Frontend
 1. `yarn install`
-2. `yarn dev` ( or `yarn build`/`yarn preview` )
+2. If using SSL on the backend, change the proxy in `vite.config.ts` to reflect that.
+3. `yarn dev` ( or `yarn build`/`yarn preview` )
 
 ### Docker Build Image
 1. Do Backend and Frontend setups first

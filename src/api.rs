@@ -14,7 +14,7 @@ use axum::{
 use serde::Serialize;
 use sqlx::{migrate::MigrateError, PgPool};
 
-use crate::endpoints;
+use crate::{endpoints, config};
 
 pub(crate) async fn routes() -> Result<Router, ApplicationError> {
     Ok(Router::new()
@@ -107,9 +107,7 @@ impl AppState {
 
                 pool
             },
-            event_uid_size: env::var("EVENT_UID_SIZE")?
-                .parse()
-                .expect("EVENT_UID_SIZE is undefined. Must be a number."),
+            event_uid_size: config::get_or_default("EVENT_UID_SIZE", 20),
         })
     }
 }

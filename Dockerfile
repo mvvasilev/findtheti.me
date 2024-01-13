@@ -54,8 +54,14 @@ USER appuser
 ENV LOG_LEVEL=info
 ENV EVENT_UID_SIZE=20
 
+ENV HTTP_PORT=8080
+
+ENV SSL_ENABLED=false
+ENV SSL_REDIRECT=true
+ENV SSL_PORT=8443
+ENV SSL_CERT_PATH=/etc/findtheti-me/certs/server.cert
+ENV SSL_KEY_PATH=/etc/findtheti-me/certs/server.key
+
 WORKDIR ./findtheti-me
 
-ENTRYPOINT ["./findtheti-me"]
-
-EXPOSE 8080/tcp
+CMD ["./findtheti-me"]
