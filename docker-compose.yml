@@ -1,30 +1,29 @@
-version: "3.4"
-
 services:
 
   postgresql:
     container_name: db
     image: "docker.io/library/postgres:16-alpine"
-    restart: unless-stopped
-    volumes: 
-      - '/data/findtheti-me/postgres_data:/var/lib/postgresql/data'
     environment:
-      POSTGRES_PASSWORD: ${PG_PASS:?database password required}
+      POSTGRES_PASSWORD: ${PG_PASS}
       POSTGRES_USER: ${PG_USER:-findthetime}
       POSTGRES_DB: ${PG_DB:-findthetime}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      retries: 5
+      start_period: 5s
+      timeout: 10s
+    ports:
+      - '5432:5432'
 
   findthetime:
-    build: .
-    restart: unless-stopped
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    build: 
+      dockerfile: ./Dockerfile
     environment:
-      DATABASE_URL: "postgres://${PG_USER:-findthetime}:${PG_PASS}@db/${PG_DB:-findthetime}"
-      SSL_ENABLED: 'true' # when this is set to false ( default ), the ssl port is not listened to.
-      SSL_REDIRECT: 'true'
-      SSL_PORT: '8443'
-      SSL_CERT_PATH: '/etc/findtheti-me/certs/server.cert'
-      SSL_KEY_PATH: '/etc/findtheti-me/certs/server.key'
-    volumes:
-      - '~/Workspace/findtheti-me/.self-signed:/etc/findtheti-me/certs' 
+      GIN_MODE: debug
+      FTT_API_DB_URL: "postgres://${PG_USER:-findthetime}:${PG_PASS}@postgresql:5432/${PG_DB:-findthetime}?sslmode=disable"
     ports:
-      - '8080:8080'
-      - '8443:8443'
+      - '8080:8000'
