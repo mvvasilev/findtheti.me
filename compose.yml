@@ -3,6 +3,7 @@ services:
   postgresql:
     container_name: db
     image: "docker.io/library/postgres:16-alpine"
+    env_file: .env
     environment:
       POSTGRES_PASSWORD: ${PG_PASS}
       POSTGRES_USER: ${PG_USER:-findthetime}
@@ -22,8 +23,9 @@ services:
         condition: service_healthy
     build: 
       dockerfile: ./Dockerfile
+    env_file: .env
     environment:
       GIN_MODE: debug
       FTT_API_DB_URL: "postgres://${PG_USER:-findthetime}:${PG_PASS}@postgresql:5432/${PG_DB:-findthetime}?sslmode=disable"
     ports:
-      - '8080:8000'
+      - '8080:8080'

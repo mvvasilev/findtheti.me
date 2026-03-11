@@ -39,9 +39,10 @@ func TestCreateAndFetchEvent_SpecificDate(t *testing.T) {
 		SetResult(httputils.UniversalResponseDto[*handlers.EventDto]{}).
 		Post("/api/events")
 
+	log.Printf("Response: %v\n", resp)
+
 	response := resp.Result().(*httputils.UniversalResponseDto[*handlers.EventDto])
 
-	log.Printf("Response: %v\n", resp)
 	log.Printf("Response: %v\n", response)
 
 	assert.Empty(t, err)
