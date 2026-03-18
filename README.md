@@ -1,151 +1,139 @@
+![Project screenshot](project-image.png)
 
-![](project-image.png)
-A convenient scheduling assistant written in Rust and React, found at https://findtheti.me
+# findtheti.me
 
-## Setup
+`findtheti.me` is a scheduling assistant with a Go API, a React/Vite frontend, and a PostgreSQL database.
 
-The simplest way to set this application up is via docker. Its images can be found at https://hub.docker.com/r/mvv97/findthetime. 
-Also, it is only compatible with PostgreSQL at the moment. It is required to have a PostgreSQL database already setup and running.
+The backend serves both the JSON API and the built frontend bundle from the same process.
 
-### Simple (With Docker)
+## Stack
 
-#### Without SSL
+- Go 1.25
+- Gin
+- GORM
+- PostgreSQL
+- React 18
+- Vite
+- Docker / Docker Compose
+
+## Features
+
+- Create scheduling events with several event types
+- Submit participant availability windows for an event
+- Fetch events and their submitted availability
+- Run database migrations automatically on API startup
+
+## Configuration
+
+The API expects these environment variables:
+
+| Variable | Required | Description |
+| --- | --- | --- |
+| `FTT_API_PORT` | Yes | Address passed to Gin, for example `:8080` |
+| `FTT_API_DB_URL` | Yes | PostgreSQL connection string |
+| `FTT_API_SQL_MIGRATIONS_LOCATION` | Yes | Migration source, usually `file://migrations` |
+| `GIN_MODE` | No | Gin mode, typically `debug` or `release` |
+| `E2E_FTT_API_BASE_URL` | No | Base URL used by the e2e test suite |
+| `PG_USER` | No | Used by `compose.yml` for local PostgreSQL setup |
+| `PG_PASS` | No | Used by `compose.yml` for local PostgreSQL setup |
+| `PG_DB` | No | Used by `compose.yml` for local PostgreSQL setup |
+
+See [.env.example](/home/mvv/Workspace/findtheti.me/.env.example) for a working local example.
+
+## Run With Docker Compose
+
+The quickest local setup is Docker Compose:
 
 ```sh
-docker run 
-    -e DATABASE_URL='postgresql://{postgres user}:{postgres password}@{postgres host}/{postgres database}' 
-    -p {port to run on}:8080
-    mvv97/findthetime:latest
+docker compose up --build
 ```
 
-#### With SSL
-```sh
-docker run 
-    -e DATABASE_URL='postgresql://{postgres user}:{postgres password}@{postgres host}/{postgres database}'
-    -e HTTP_PORT=8080
-    -e SSL_PORT=8443
-    -e SSL_ENABLED='true'
-    -v /data/findtheti-me/certs:/etc/findtheti-me/certs # Place your cert files in /data/findtheti-me/certs
-    -p {http port to run on}:8080 # if SSL_REDIRECT=false, this can be skipped. If enabled, ensure the SSL_PORT is configured the same as it is exposed.
-    -p 8443:8443 # See above
-    mvv97/findthetime:latest
-```
+This starts:
 
-Ensure the cert files are owned by user:group `10001:10001`, as those correspond to the container user.
+- PostgreSQL on `localhost:5432`
+- The application on `http://localhost:8080`
 
-#### Example docker-compose.yml w/ SSL
+`compose.yml` reads values from `.env`, so copy [.env.example](/home/mvv/Workspace/findtheti.me/.env.example) to `.env` first and adjust credentials if needed.
 
-```yml
-version: '3.4'
+## Run Locally
 
-services:
-
-  postgresql:
-    container_name: ftt_db
-    image: "docker.io/library/postgres:16-alpine"
-    restart: unless-stopped
-    volumes: 
-      - '/data/findtheti-me/postgres_data:/var/lib/postgresql/data'
-    environment:
-      POSTGRES_PASSWORD: ${PG_PASS:?database password required}
-      POSTGRES_USER: ${PG_USER:-findthetime}
-      POSTGRES_DB: ${PG_DB:-findthetime}
-
-  findthetime:
-    image: "docker.io/mvv97/findthetime:latest"
-    restart: unless-stopped
-    environment:
-      DATABASE_URL: "postgres://${PG_USER:-findthetime}:${PG_PASS}@ftt_db/${PG_DB:-findthetime}"
-      LOG_LEVEL: 'debug'
-      HTTP_PORT: '8114'
-      SSL_ENABLED: 'true'
-      SSL_PORT: '8115'
-      SSL_CERT_PATH: '/etc/findtheti-me/certs/fullchain.pem'
-      SSL_KEY_PATH: '/etc/findtheti-me/certs/privkey.pem'
-    volumes:
-      - '/data/findtheti-me/certs:/etc/findtheti-me/certs' 
-    ports:
-      - '8114:8114'
-      - '8115:8115'
-```
-
-#### Example docker-compose.yml w/o SSL
-
-```yml
-version: '3.4'
-
-services:
-
-  postgresql:
-    container_name: ftt_db
-    image: "docker.io/library/postgres:16-alpine"
-    restart: unless-stopped
-    volumes: 
-      - '/data/findtheti-me/postgres_data:/var/lib/postgresql/data'
-    environment:
-      POSTGRES_PASSWORD: ${PG_PASS:?database password required}
-      POSTGRES_USER: ${PG_USER:-findthetime}
-      POSTGRES_DB: ${PG_DB:-findthetime}
-
-  findthetime:
-    image: "docker.io/mvv97/findthetime:latest"
-    restart: unless-stopped
-    environment:
-      DATABASE_URL: "postgres://${PG_USER:-findthetime}:${PG_PASS}@ftt_db/${PG_DB:-findthetime}"
-      LOG_LEVEL: 'debug'
-      HTTP_PORT: '8114'
-      SSL_ENABLED: 'false'
-    ports:
-      - '8114:8114'
-```
-
-Ensure you have the necessary environment variables configured: `PG_DB`, `PG_USER` and `PG_PASS`.
-
-### Advanced (Without Docker)
-
-1. Compile Backend (`cargo build --release`)
-2. Build Frontend (`cd frontend && yarn install && yarn build`)
-3. Copy the `findtheti-me` file from `target/release` and place it into your desired installation folder
-4. Copy the `frontend/dist` folder and place it into the same installation folder, maintaining the directory tree.
-
-In the end, your folder structure should be as follows:
-```
-installationDir/
-|-frontend/
-| |-dist/
-|-findtheti-me
-```
-5. Next, create a `.env` file in the root of the installation directory, and look at `.env.example` for what should be in there
-
-Finally, run `./findtheti-me` in the root, and the application should start.
-
-### Enable SSL
-
-In order to enable SSL, configure `SSL_ENABLED=true`, `SSL_PORT` with the desired port ( `8443` by default ), and `SSL_CERT_PATH` and `SSL_KEY_PATH`
-with the paths to your certificate and key files ( `/etc/letsencrypt/live/your.domain/cert.pem` and `/etc/letsencrypt/live/your.domain/key.pem`, for example ).
-
-**Note that there is currently no support for encrypted private keys ( those that start with `-----BEGIN ENCRYPTED PRIVATE KEY-----`).
-Attempting to use such will be met with the error:**
-
-```
-Unable to use files configured in 'SSL_CERT_PATH' or 'SSL_KEY_PATH': Custom { kind: Other, error: "private key format not supported" }
-```
-`findtheti.me` will automatically register a listener at the configured `HTTP_PORT` to redirect
-to the configured `SSL_PORT`. To disable this, configure `SSL_REDIRECT=false` ( `true` by default ).
-
-## Setup For Development
 ### Backend
-1. Create a PostgreSQL database
-2. Configure a `.env` in the project root directory ( following `.env.example` )
-3. Run `cargo sqlx migrate run` to run all migrations ( ensure you've created the database beforehand )
-4. `cargo run` to run the backend ( or `cargo build` to compile it, with the `--release` flag for an optimized build )
+
+1. Create a PostgreSQL database.
+2. Create a `.env` file in the project root based on [.env.example](/home/mvv/Workspace/findtheti.me/.env.example).
+3. Ensure `FTT_API_DB_URL` points at that database.
+4. Run the API:
+
+```sh
+go run ./cmd/fttapi-svc
+```
+
+On startup the service opens the database connection, applies migrations from `migrations/`, and serves:
+
+- `POST /api/events`
+- `GET /api/events/:event_id`
+- `POST /api/events/:event_id/availabilities`
+- `GET /api/events/:event_id/availabilities`
 
 ### Frontend
-1. `yarn install`
-2. If using SSL on the backend, change the proxy in `vite.config.ts` to reflect that.
-3. `yarn dev` ( or `yarn build`/`yarn preview` )
 
-### Docker Build Image
-1. Do Backend and Frontend setups first
-2. Run `cargo sqlx prepare` ( ensure .sqlx directory has been created. The one included in this git repo may be out of date. )
-3. `docker build .` ( or `podman build .` ) in root directory
+In a second terminal:
+
+```sh
+cd frontend
+npm install
+npm run dev
+```
+
+The Vite dev server proxies `/api` requests to `http://localhost:8080` by default. If you change the backend port, update [frontend/vite.config.ts](/home/mvv/Workspace/findtheti.me/frontend/vite.config.ts).
+
+## Build
+
+### Production Docker image
+
+```sh
+docker build -t fttapi .
+```
+
+The image:
+
+- builds the frontend bundle
+- builds the Go API binary
+- serves the frontend from `./frontend/dist`
+
+### Local binaries and frontend bundle
+
+```sh
+make build
+make frontend
+```
+
+Build outputs are written to `target/` and `frontend/dist/`.
+
+## Tests
+
+Run unit and integration-style tests in `internal/`:
+
+```sh
+make test
+```
+
+Run end-to-end tests against a running instance:
+
+```sh
+make e2e
+```
+
+`make e2e` requires `E2E_FTT_API_BASE_URL` to point to a live server.
+
+## Useful Make Targets
+
+- `make help`
+- `make build`
+- `make frontend`
+- `make frontend-dev`
+- `make test`
+- `make e2e`
+- `make docker`
+- `make docker-compose`
+- `make migration name=AddSomething`

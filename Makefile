@@ -5,6 +5,8 @@ help:
 	@echo "  build            - Build fttapi"
 	@echo "  test             - Run all non-e2e tests"
 	@echo "  migration name=? - Create new db migration ( provide name )"
+	@echo "  frontend         - Build frontend ( for production )"
+	@echo "  frontend-dev     - Build frontend ( for development )"
 	@echo "  docker           - Build the fttapi Dockerfile"
 	@echo "  docker-compose   - Start fttapi and dependencies via docker-compose"
 
