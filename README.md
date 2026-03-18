@@ -1,10 +1,6 @@
 ![Project screenshot](project-image.png)
 
-# findtheti.me
-
 `findtheti.me` is a scheduling assistant with a Go API, a React/Vite frontend, and a PostgreSQL database.
-
-The backend serves both the JSON API and the built frontend bundle from the same process.
 
 ## Stack
 
@@ -29,7 +25,7 @@ The API expects these environment variables:
 
 | Variable | Required | Description |
 | --- | --- | --- |
-| `FTT_API_PORT` | Yes | Address passed to Gin, for example `:8080` |
+| `FTT_API_PORT` | Yes | Port for the application to use, for example `:8080` |
 | `FTT_API_DB_URL` | Yes | PostgreSQL connection string |
 | `FTT_API_SQL_MIGRATIONS_LOCATION` | Yes | Migration source, usually `file://migrations` |
 | `GIN_MODE` | No | Gin mode, typically `debug` or `release` |
@@ -45,15 +41,10 @@ See [.env.example](/home/mvv/Workspace/findtheti.me/.env.example) for a working 
 The quickest local setup is Docker Compose:
 
 ```sh
-docker compose up --build
+make docker-compose
 ```
 
-This starts:
-
-- PostgreSQL on `localhost:5432`
-- The application on `http://localhost:8080`
-
-`compose.yml` reads values from `.env`, so copy [.env.example](/home/mvv/Workspace/findtheti.me/.env.example) to `.env` first and adjust credentials if needed.
+`compose.yml` reads values from `.env`, so copy [.env.example](/home/mvv/Workspace/findtheti.me/.env.example) to `.env` first and adjust credentials.
 
 ## Run Locally
 
@@ -61,7 +52,7 @@ This starts:
 
 1. Create a PostgreSQL database.
 2. Create a `.env` file in the project root based on [.env.example](/home/mvv/Workspace/findtheti.me/.env.example).
-3. Ensure `FTT_API_DB_URL` points at that database.
+3. Ensure `FTT_API_DB_URL` points to the database.
 4. Run the API:
 
 ```sh
@@ -92,14 +83,8 @@ The Vite dev server proxies `/api` requests to `http://localhost:8080` by defaul
 ### Production Docker image
 
 ```sh
-docker build -t fttapi .
+make docker
 ```
-
-The image:
-
-- builds the frontend bundle
-- builds the Go API binary
-- serves the frontend from `./frontend/dist`
 
 ### Local binaries and frontend bundle
 
@@ -124,16 +109,4 @@ Run end-to-end tests against a running instance:
 make e2e
 ```
 
-`make e2e` requires `E2E_FTT_API_BASE_URL` to point to a live server.
-
-## Useful Make Targets
-
-- `make help`
-- `make build`
-- `make frontend`
-- `make frontend-dev`
-- `make test`
-- `make e2e`
-- `make docker`
-- `make docker-compose`
-- `make migration name=AddSomething`
+`make e2e` requires `E2E_FTT_API_BASE_URL` to point to a live server.ss
