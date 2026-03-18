@@ -86,6 +86,10 @@ The Vite dev server proxies `/api` requests to `http://localhost:8080` by defaul
 make docker
 ```
 
+### GitHub Container Registry
+
+The repository includes a GitHub Actions workflow at [.github/workflows/docker-publish.yml](/home/mvv/Workspace/findtheti.me/.github/workflows/docker-publish.yml) that builds the top-level `Dockerfile`.
+
 ### Local binaries and frontend bundle
 
 ```sh
