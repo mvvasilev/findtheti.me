@@ -26,7 +26,7 @@ func CreateHttpApiRouter(
 	r.POST("/api/events", eventController.CreateEvent)
 
 	// Availability routes
-	r.GET("/api/events/:event_id/availabilities", availabilityController.FetchAvailability)
+	r.GET("/api/events/:event_id/availabilities", availabilityController.FetchAvailabilities)
 	r.POST("/api/events/:event_id/availabilities", availabilityController.CreateAvailability)
 
 	return r

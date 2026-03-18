@@ -16,13 +16,14 @@ func NewRepository() *Repository {
 
 func (r *Repository) Create(ctx context.Context, event *Event) (*Event, error) {
 	return event, dbutils.RunInTx(ctx, func(tx *gorm.DB) error {
-		return gorm.G[Event](tx).Create(ctx, event)
+		return tx.WithContext(ctx).Create(event).Error
 	})
 }
 
 func (r *Repository) FindBySnowflakeId(ctx context.Context, snowflake string) (*Event, error) {
 	return dbutils.QueryInTx(ctx, func(tx *gorm.DB) (*Event, error) {
-		event, err := gorm.G[Event](tx).Where("snowflake_id = ?", snowflake).First(ctx)
-		return &event, err
+		var found Event
+		err := tx.WithContext(ctx).Where("snowflake_id = ?", snowflake).First(&found).Error
+		return &found, err
 	})
 }

@@ -3,10 +3,10 @@ package event
 import (
 	"context"
 	"findthetime/internal/domain/errors"
-	"strings"
+	"os"
+	"strconv"
+	"sync/atomic"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type Service struct {
@@ -47,12 +47,12 @@ func (s *Service) CreateEvent(ctx context.Context, cmd *CreateEventCommand) (eve
 			return
 		}
 
-		if cmd.FromDate.After(*cmd.ToDate) {
+		if !cmd.FromDate.Before(*cmd.ToDate) {
 			err = errors.New("Supplied FromDate is later than or equal to ToDate")
 			return
 		}
 
-		if cmd.ToDate.Sub(*cmd.ToDate).Hours() < 1*24 {
+		if cmd.ToDate.Sub(*cmd.FromDate).Hours() < 1*24 {
 			err = errors.New("Supplied ToDate is less than 1 day away from the FromDate")
 			return
 		}
@@ -78,6 +78,41 @@ func (s *Service) FindEventBySnowflakeId(ctx context.Context, eventId string) (*
 	return s.repo.FindBySnowflakeId(ctx, eventId)
 }
 
+const snowflakeEpoch int64 = 1704067200000
+
+var (
+	snowflakeState  atomic.Uint64
+	snowflakeNodeID = uint64(os.Getpid()) & 0x3ff
+)
+
 func generateSnowflakeId() string {
-	return strings.Replace(uuid.New().String(), "-", "", -1) // TODO: Actual Snowflake IDs
+	for {
+		now := uint64(time.Now().UnixMilli() - snowflakeEpoch)
+		current := snowflakeState.Load()
+		lastTimestamp := current >> 12
+		sequence := current & 0xfff
+
+		switch {
+		case now < lastTimestamp:
+			now = lastTimestamp
+			sequence++
+		case now == lastTimestamp:
+			sequence++
+		default:
+			sequence = 0
+		}
+
+		if sequence > 0xfff {
+			for now <= lastTimestamp {
+				now = uint64(time.Now().UnixMilli() - snowflakeEpoch)
+			}
+			sequence = 0
+		}
+
+		next := (now << 12) | sequence
+		if snowflakeState.CompareAndSwap(current, next) {
+			id := (now << 22) | (snowflakeNodeID << 12) | sequence
+			return strconv.FormatUint(id, 10)
+		}
+	}
 }

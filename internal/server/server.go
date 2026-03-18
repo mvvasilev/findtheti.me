@@ -3,6 +3,7 @@ package server
 import (
 	"log"
 
+	"findthetime/internal/domain/availability"
 	"findthetime/internal/domain/event"
 	"findthetime/internal/http"
 	"findthetime/internal/http/handlers"
@@ -42,7 +43,9 @@ func StartFindTheTimeApiServer(port string, postgresUrl string, migrationsLoc st
 		handlers.NewEventController(
 			event.NewService(event.NewRepository()),
 		),
-		handlers.NewAvailabilityController(),
+		handlers.NewAvailabilityController(
+			availability.NewService(availability.NewRepository()),
+		),
 		middleware.NewGORMMiddleware(db),
 		middleware.NewUniversalDtoMiddleware(),
 	).Run(port)

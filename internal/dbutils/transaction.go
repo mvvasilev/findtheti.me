@@ -39,11 +39,12 @@ func RunInTx(ctx context.Context, task TxFunc) error {
 	return task(tx)
 }
 
-func QueryInTx[T any](ctx context.Context, query TxQuery[*T]) (*T, error) {
+func QueryInTx[T any](ctx context.Context, query TxQuery[T]) (T, error) {
 	tx, ok := TxFromContext(ctx)
 
 	if !ok {
-		return nil, errors.New("No transaction to be found in context")
+		var zero T
+		return zero, errors.New("No transaction to be found in context")
 	}
 
 	return query(tx)

@@ -16,3 +16,7 @@ type Availability struct {
 	UserIp    string
 	UserName  string
 }
+
+func (Availability) TableName() string {
+	return "availabilities"
+}
