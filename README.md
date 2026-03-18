@@ -1,6 +1,6 @@
 ![Project screenshot](project-image.png)
 
-`findtheti.me` is a scheduling assistant with a Go API, a React/Vite frontend, and a PostgreSQL database.
+https://findtheti.me is a scheduling assistant with a Go API, a React/Vite frontend, and a PostgreSQL database.
 
 ## Stack
 
